@@ -32,10 +32,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.system = platform.system()
 
+        version_file = self.common.get_resource_path('version')
+        with open(version_file) as f:
+            self.version_string = f.read().strip()
+
         self.setWindowTitle('GPG Sync')
         self.setWindowIcon(common.get_icon())
 
-        # Window header
+        # Header
         header_logo = QtGui.QImage(self.common.get_resource_path('gpgsync-32x32.png'))
         header_logo_label = QtWidgets.QLabel()
         header_logo_label.setPixmap(QtGui.QPixmap.fromImage(header_logo))
@@ -46,7 +50,14 @@ class MainWindow(QtWidgets.QMainWindow):
         header_layout.addWidget(header_label)
         header_layout.addStretch()
 
-        # Window layout
+        # Status bar
+        version_label = QtWidgets.QLabel(self.version_string)
+        version_label.setStyleSheet('QLabel { color: #666666; }')
+        self.status_bar = QtWidgets.QStatusBar()
+        self.status_bar.addPermanentWidget(version_label)
+        self.setStatusBar(self.status_bar)
+
+        # Layout
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(header_layout)
         layout.addStretch()
