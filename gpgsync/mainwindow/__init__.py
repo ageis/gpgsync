@@ -18,31 +18,4 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os, sys, platform
-from PyQt5 import QtCore, QtWidgets
-
-from . import common
 from .mainwindow import MainWindow
-
-class Application(QtWidgets.QApplication):
-    def __init__(self):
-        if platform.system() == 'Linux':
-            self.setAttribute(QtCore.Qt.AA_X11InitThreads, True)
-        QtWidgets.QApplication.__init__(self, sys.argv)
-
-def main():
-    # https://stackoverflow.com/questions/15157502/requests-library-missing-file-after-cx-freeze
-    if getattr(sys, 'frozen', False):
-        os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
-
-    debug = False
-    if '--debug' in sys.argv:
-        debug = True
-
-    app = Application()
-    main_window = MainWindow(app, common, debug)
-
-    sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main()
