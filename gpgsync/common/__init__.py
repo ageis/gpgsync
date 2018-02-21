@@ -65,7 +65,9 @@ def clean_keyserver(keyserver):
 def get_resource_path(filename):
     if getattr(sys, 'gpgsync_dev', False):
         # Look for resources directory relative to python file
-        prefix = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))), 'share')
+        prefix = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(inspect.getfile(inspect.currentframe())))
+        )), 'share')
 
     elif platform.system() == 'Linux':
         prefix = os.path.join(sys.prefix, 'share/gpgsync')
