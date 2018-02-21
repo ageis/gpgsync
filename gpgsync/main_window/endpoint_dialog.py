@@ -168,18 +168,16 @@ class EndpointDialog(QtWidgets.QDialog):
         proxy_host = self.proxy_host_edit.text().strip().encode()
         proxy_port = self.proxy_port_edit.text().strip().encode()
 
-        """
-        # Show loading graphic, and disable all input until it's finished Verifying
-        self.toggle_input(False)
+        # Disable buttons while verifying
+        self.save_button.setEnabled(False)
+        self.cancel_button.setEnabled(False)
 
         # Run the verifier inside a new thread
-        self.verifier = Verifier(self.debug, self.gpg, self.status_q, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port)
-        self.common.log('EndpointDialog', "save_endpoint, adding Verifier thread ({} threads right now)".format(len(self.threads)))
-        self.verifier.alert_error.connect(self.edit_endpoint_alert_error)
-        self.verifier.success.connect(self.edit_endpoint_save)
-        self.verifier.finished.connect(self.clean_threads)
-        self.verifier.start()
-        """
+        verifier = Verifier(self.debug, self.gpg, self.status_q, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port)
+        verifier.alert_error.connect(self.edit_endpoint_alert_error)
+        verifier.success.connect(self.edit_endpoint_save)
+        verifier.finished.connect(self.clean_threads)
+        verifier.start()
 
         self.close()
 

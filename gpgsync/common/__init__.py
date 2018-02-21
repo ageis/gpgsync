@@ -29,7 +29,7 @@ import socket
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 from .settings import Settings
-
+from .gnupg import GnuPG
 
 class Common(object):
     """
@@ -39,6 +39,9 @@ class Common(object):
     def __init__(self, debug):
         # Debug mode
         self.debug = debug
+
+        # The platform
+        self.system = platform.system()
 
         # Load icons
         self.icon = QtGui.QIcon(self.get_resource_path('gpgsync.png'))
@@ -53,6 +56,17 @@ class Common(object):
 
         # Load settings
         self.settings = Settings(self)
+
+        # Initialize gpg
+        self.gpg = GnuPG(self)
+        if not self.gpg.is_gpg_available():
+            if self.system == 'Linux':
+                self.alert('GnuPG 2.x doesn\'t seem to be installed. Install your operating system\'s gnupg2 package.')
+            if self.system == 'Darwin':
+                self.alert('GnuPG doesn\'t seem to be installed. Install <a href="https://gpgtools.org/">GPGTools</a>.')
+            if self.system == 'Windows':
+                self.alert('GnuPG doesn\'t seem to be installed. Install <a href="http://gpg4win.org/">Gpg4win</a>.')
+            sys.exit()
 
     def log(self, module, msg):
         if self.debug:
