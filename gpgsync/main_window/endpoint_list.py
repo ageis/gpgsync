@@ -19,13 +19,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from PyQt5 import QtCore, QtWidgets, QtGui
+from .endpoint_dialog import EndpointDialog
 
 class EndpointList(QtWidgets.QWidget):
-    def __init__(self, settings, debug=False):
+    def __init__(self, common, settings, debug=False):
         super(EndpointList, self).__init__()
         self.debug = debug
         self.log('__init__')
 
+        self.common = common
         self.settings = settings
 
         # Endpoint layout
@@ -33,6 +35,7 @@ class EndpointList(QtWidgets.QWidget):
 
         # Buttons
         self.add_button = QtWidgets.QPushButton('Add Endpoint')
+        self.add_button.clicked.connect(self.add_endpoint)
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch()
         button_layout.addWidget(self.add_button)
@@ -45,11 +48,24 @@ class EndpointList(QtWidgets.QWidget):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
+        self.refresh()
+
     def refresh(self):
         """
         Redraw all endpoints based on what's in settings
         """
-        pass
+        self.log('refresh')
+
+        for e in self.settings.endpoints:
+            self.log(str(e))
+
+    def add_endpoint(self):
+        """
+        Open a new dialog to add an endpoint
+        """
+        self.log('add_endpoint')
+        d = EndpointDialog(self.common, True, self.debug)
+        d.exec_()
 
     def log(self, msg):
         if self.debug:

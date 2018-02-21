@@ -61,7 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
         header_widget.setLayout(header_layout)
 
         # Endpoint list
-        self.endpoint_list = EndpointList(self.settings, self.debug)
+        self.endpoint_list = EndpointList(self.common, self.settings, self.debug)
 
         # Status bar
         version_label = QtWidgets.QLabel(self.version_string)
