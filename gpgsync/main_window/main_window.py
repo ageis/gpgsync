@@ -21,15 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import platform
 from PyQt5 import QtCore, QtWidgets, QtGui
 
+from .endpoint_list import EndpointList
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, app, common, debug=False):
         super(MainWindow, self).__init__()
-        self.app = app
-        self.common = common
         self.debug = debug
-
         self.log('__init__')
 
+        self.app = app
+        self.common = common
         self.system = platform.system()
 
         # Load version string
@@ -45,15 +46,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowIcon(common.get_icon())
 
         # Header
+        header_widget = QtWidgets.QWidget()
+        header_widget.setStyleSheet('QWidget { background-color: #ffffff; border-radius: 5px; }')
         header_logo = QtGui.QImage(self.common.get_resource_path('gpgsync-32x32.png'))
         header_logo_label = QtWidgets.QLabel()
         header_logo_label.setPixmap(QtGui.QPixmap.fromImage(header_logo))
         header_label = QtWidgets.QLabel('GPG Sync')
         header_label.setStyleSheet('QLabel { font-size: 20px; font-weight: bold; }')
         header_layout = QtWidgets.QHBoxLayout()
+        header_layout.addStretch()
         header_layout.addWidget(header_logo_label)
         header_layout.addWidget(header_label)
         header_layout.addStretch()
+        header_widget.setLayout(header_layout)
+
+        # Endpoint list
+        self.endpoint_list = EndpointList(self.settings, self.debug)
 
         # Status bar
         version_label = QtWidgets.QLabel(self.version_string)
@@ -64,10 +72,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Layout
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(header_layout)
+        layout.addWidget(header_widget)
+        layout.addWidget(self.endpoint_list)
         layout.addStretch()
         central_widget = QtWidgets.QWidget()
-        central_widget.setStyleSheet('QWidget { background-color: #ffffff; }')
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 

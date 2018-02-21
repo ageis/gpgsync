@@ -20,6 +20,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-class EndpointList(QtWidgets.QListWidget):
-    def __init__(self, app, common, debug=False):
+class EndpointList(QtWidgets.QWidget):
+    def __init__(self, settings, debug=False):
         super(EndpointList, self).__init__()
+        self.debug = debug
+        self.log('__init__')
+
+        self.settings = settings
+
+        # Endpoint layout
+        endpoint_layout = QtWidgets.QHBoxLayout()
+
+        # Buttons
+        self.add_button = QtWidgets.QPushButton('Add Endpoint')
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(self.add_button)
+        button_layout.addStretch()
+
+        # Layout
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(endpoint_layout)
+        layout.addStretch()
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+    def refresh(self):
+        """
+        Redraw all endpoints based on what's in settings
+        """
+        pass
+
+    def log(self, msg):
+        if self.debug:
+            print("[EndpointList] {}".format(msg))
