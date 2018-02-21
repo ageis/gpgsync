@@ -18,7 +18,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os, json, pickle, platform
+import os
+import json
+import pickle
+import platform
 import dateutil.parser as date_parser
 
 from .endpoint import Endpoint

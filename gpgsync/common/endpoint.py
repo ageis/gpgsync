@@ -18,7 +18,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import requests, socks, uuid, datetime
+import requests
+import socks
+import uuid
+import datetime
 import dateutil.parser as date_parser
 from io import BytesIO
 from PyQt5 import QtCore, QtWidgets

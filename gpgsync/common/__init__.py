@@ -18,18 +18,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import datetime, os, sys, re, platform, inspect, requests, socket
+import datetime
+import os
+import sys
+import re
+import platform
+import inspect
+import requests
+import socket
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from .endpoint import Endpoint, Verifier, Refresher, URLDownloadError, ProxyURLDownloadError, \
-    InvalidFingerprints
-
-from .gnupg import GnuPG, InvalidFingerprint, InvalidKeyserver, KeyserverError, NotFoundOnKeyserver, \
-    NotFoundInKeyring, RevokedKey, ExpiredKey, VerificationError, BadSignature, SignedWithWrongKey
-
-from .settings import Settings, OldEndpoint
-
-from .loading_animation import LoadingAnimation
+from .settings import Settings
 
 
 class Common(object):
