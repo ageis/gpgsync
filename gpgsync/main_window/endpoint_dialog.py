@@ -103,6 +103,17 @@ class EndpointDialog(QtWidgets.QDialog):
         advanced_toggle_layout.addWidget(self.advanced_toggle_button)
         advanced_toggle_layout.addStretch()
 
+        # Buttons
+        self.save_button = QtWidgets.QPushButton('Save')
+        self.save_button.setDefault(True)
+        self.save_button.clicked.connect(self.save_clicked)
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.cancel_button.clicked.connect(self.cancel_clicked)
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(self.save_button)
+        buttons_layout.addWidget(self.cancel_button)
+
         # Layout
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(instructions_label)
@@ -114,6 +125,7 @@ class EndpointDialog(QtWidgets.QDialog):
         layout.addWidget(self.advanced_options)
         layout.addLayout(advanced_toggle_layout)
         layout.addStretch()
+        layout.addLayout(buttons_layout)
 
         self.update_sig_url(self.url_edit.text())
         self.setLayout(layout)
@@ -142,6 +154,20 @@ class EndpointDialog(QtWidgets.QDialog):
             self.adjustSize()
         else:
             self.sig_url_label.hide()
+
+    def save_clicked(self):
+        """
+        Save button clicked.
+        """
+        self.log('save_clicked')
+        self.close()
+
+    def cancel_clicked(self):
+        """
+        Cancel button clicked.
+        """
+        self.log('cancel_clicked')
+        self.close()
 
     def log(self, msg):
         if self.debug:
