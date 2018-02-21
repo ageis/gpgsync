@@ -31,6 +31,7 @@ class EndpointDialog(QtWidgets.QDialog):
 
         # Dialog settings
         self.setModal(True)
+        self.setMinimumWidth(450)
         if self.new:
             self.setWindowTitle('Add Endpoint')
         else:
@@ -41,6 +42,7 @@ class EndpointDialog(QtWidgets.QDialog):
         # Instructions label
         instructions_label = QtWidgets.QLabel("Each endpoint has an authority key fingerprint and a fingerprints URL. Ask your organization's techie for this info.")
         instructions_label.setWordWrap(True)
+        instructions_label.setMinimumHeight(40)
 
         # Signing key fingerprint
         fingerprint_label = QtWidgets.QLabel("GPG Fingerprint")
@@ -52,9 +54,8 @@ class EndpointDialog(QtWidgets.QDialog):
         self.url_edit.setPlaceholderText("https://")
 
         # Signature URL
-        sig_url_label = QtWidgets.QLabel("Signature URL")
-        self.sig_url_edit = QtWidgets.QLineEdit()
-        self.sig_url_edit.setEnabled(False)
+        self.sig_url_label = QtWidgets.QLabel()
+        self.sig_url_label.setStyleSheet('QLabel { font-style: italic; color: #666666; font-size: 12px; }')
         self.url_edit.textChanged.connect(self.update_sig_url)
 
         # Keyserver
@@ -86,12 +87,8 @@ class EndpointDialog(QtWidgets.QDialog):
 
         # Advanced layout
         advanced_layout = QtWidgets.QVBoxLayout()
-        advanced_layout.addWidget(sig_url_label)
-        advanced_layout.addWidget(self.sig_url_edit)
-        advanced_layout.addStretch(1)
         advanced_layout.addWidget(keyserver_label)
         advanced_layout.addWidget(self.keyserver_edit)
-        advanced_layout.addStretch(1)
         advanced_layout.addWidget(proxy_group)
         self.advanced_options = QtWidgets.QGroupBox("Advanced options")
         self.advanced_options.setLayout(advanced_layout)
@@ -109,17 +106,16 @@ class EndpointDialog(QtWidgets.QDialog):
         # Layout
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(instructions_label)
-        layout.addStretch(1)
         layout.addWidget(fingerprint_label)
         layout.addWidget(self.fingerprint_edit)
-        layout.addStretch(1)
         layout.addWidget(url_label)
         layout.addWidget(self.url_edit)
-        layout.addStretch(1)
+        layout.addWidget(self.sig_url_label)
         layout.addWidget(self.advanced_options)
-        layout.addStretch(1)
         layout.addLayout(advanced_toggle_layout)
+        layout.addStretch()
 
+        self.update_sig_url(self.url_edit.text())
         self.setLayout(layout)
 
     def advanced_toggle(self):
@@ -134,11 +130,18 @@ class EndpointDialog(QtWidgets.QDialog):
             self.advanced_options.show()
             self.advanced_toggle_button.setText('Hide advanced options')
 
+        self.adjustSize()
+
     def update_sig_url(self, text):
         """
         When the fingerprints URL changes, update the signature URL too
         """
-        self.sig_url_edit.setText("{}.sig".format(text))
+        if text != '':
+            self.sig_url_label.show()
+            self.sig_url_label.setText("Signature URL: {}.sig".format(text))
+            self.adjustSize()
+        else:
+            self.sig_url_label.hide()
 
     def log(self, msg):
         if self.debug:
