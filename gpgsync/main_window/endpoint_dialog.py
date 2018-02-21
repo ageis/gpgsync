@@ -29,12 +29,116 @@ class EndpointDialog(QtWidgets.QDialog):
         self.common = common
         self.new = new
 
+        # Dialog settings
         self.setModal(True)
-
         if self.new:
             self.setWindowTitle('Add Endpoint')
         else:
             self.setWindowTitle('Edit Endpoint')
+
+        self.endpoint = None
+
+        # Instructions label
+        instructions_label = QtWidgets.QLabel("Each endpoint has an authority key fingerprint and a fingerprints URL. Ask your organization's techie for this info.")
+        instructions_label.setWordWrap(True)
+
+        # Signing key fingerprint
+        fingerprint_label = QtWidgets.QLabel("GPG Fingerprint")
+        self.fingerprint_edit = QtWidgets.QLineEdit()
+
+        # Fingerprints URL
+        url_label = QtWidgets.QLabel("Fingerprints URL")
+        self.url_edit = QtWidgets.QLineEdit()
+        self.url_edit.setPlaceholderText("https://")
+
+        # Signature URL
+        sig_url_label = QtWidgets.QLabel("Signature URL")
+        self.sig_url_edit = QtWidgets.QLineEdit()
+        self.sig_url_edit.setEnabled(False)
+        self.url_edit.textChanged.connect(self.update_sig_url)
+
+        # Keyserver
+        keyserver_label = QtWidgets.QLabel("Key server")
+        self.keyserver_edit = QtWidgets.QLineEdit()
+
+        # SOCKS5 proxy settings
+        self.use_proxy = QtWidgets.QCheckBox()
+        self.use_proxy.setText("Load URL through SOCKS5 proxy (e.g. Tor)")
+        self.use_proxy.setCheckState(QtCore.Qt.Unchecked)
+
+        proxy_host_label = QtWidgets.QLabel('Host')
+        self.proxy_host_edit = QtWidgets.QLineEdit()
+        proxy_port_label = QtWidgets.QLabel('Port')
+        self.proxy_port_edit = QtWidgets.QLineEdit()
+
+        proxy_hlayout = QtWidgets.QHBoxLayout()
+        proxy_hlayout.addWidget(proxy_host_label)
+        proxy_hlayout.addWidget(self.proxy_host_edit)
+        proxy_hlayout.addWidget(proxy_port_label)
+        proxy_hlayout.addWidget(self.proxy_port_edit)
+
+        proxy_vlayout = QtWidgets.QVBoxLayout()
+        proxy_vlayout.addWidget(self.use_proxy)
+        proxy_vlayout.addLayout(proxy_hlayout)
+
+        proxy_group = QtWidgets.QGroupBox("Proxy Configuration")
+        proxy_group.setLayout(proxy_vlayout)
+
+        # Advanced layout
+        advanced_layout = QtWidgets.QVBoxLayout()
+        advanced_layout.addWidget(sig_url_label)
+        advanced_layout.addWidget(self.sig_url_edit)
+        advanced_layout.addStretch(1)
+        advanced_layout.addWidget(keyserver_label)
+        advanced_layout.addWidget(self.keyserver_edit)
+        advanced_layout.addStretch(1)
+        advanced_layout.addWidget(proxy_group)
+        self.advanced_options = QtWidgets.QGroupBox("Advanced options")
+        self.advanced_options.setLayout(advanced_layout)
+        self.advanced_options.hide()
+
+        # Toggle advanced button
+        self.advanced_toggle_button = QtWidgets.QPushButton('Show advanced options')
+        self.advanced_toggle_button.setFlat(True)
+        self.advanced_toggle_button.setStyleSheet('QPushButton { color: #3f7fcf; }')
+        self.advanced_toggle_button.clicked.connect(self.advanced_toggle)
+        advanced_toggle_layout = QtWidgets.QHBoxLayout()
+        advanced_toggle_layout.addWidget(self.advanced_toggle_button)
+        advanced_toggle_layout.addStretch()
+
+        # Layout
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(instructions_label)
+        layout.addStretch(1)
+        layout.addWidget(fingerprint_label)
+        layout.addWidget(self.fingerprint_edit)
+        layout.addStretch(1)
+        layout.addWidget(url_label)
+        layout.addWidget(self.url_edit)
+        layout.addStretch(1)
+        layout.addWidget(self.advanced_options)
+        layout.addStretch(1)
+        layout.addLayout(advanced_toggle_layout)
+
+        self.setLayout(layout)
+
+    def advanced_toggle(self):
+        """
+        Show or hide advanced options
+        """
+        self.log('advanced_toggle')
+        if self.advanced_options.isVisible():
+            self.advanced_options.hide()
+            self.advanced_toggle_button.setText('Show advanced options')
+        else:
+            self.advanced_options.show()
+            self.advanced_toggle_button.setText('Hide advanced options')
+
+    def update_sig_url(self, text):
+        """
+        When the fingerprints URL changes, update the signature URL too
+        """
+        self.sig_url_edit.setText("{}.sig".format(text))
 
     def log(self, msg):
         if self.debug:
