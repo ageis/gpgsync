@@ -29,6 +29,8 @@ from .gnupg import GnuPG, InvalidFingerprint, InvalidKeyserver, KeyserverError, 
 
 from .settings import Settings, OldEndpoint
 
+from .loading_animation import LoadingAnimation
+
 def alert(msg, details='', icon=QtWidgets.QMessageBox.Warning):
     d = QtWidgets.QMessageBox()
     d.setWindowTitle('GPG Sync')

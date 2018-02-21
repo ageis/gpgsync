@@ -20,18 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from . import common
-
 class LoadingAnimation(QtWidgets.QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, common, parent=None):
         QtWidgets.QLabel.__init__(self, parent)
+        self.common = common
 
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAlignment(QtCore.Qt.AlignCenter)
         self.setFixedWidth(16)
         self.setFixedHeight(16)
 
-        self.movie = QtGui.QMovie(common.get_resource_path('loading.gif'), QtCore.QByteArray(), self)
+        self.movie = QtGui.QMovie(self.common.get_resource_path('loading.gif'), QtCore.QByteArray(), self)
         self.movie.setSpeed(100)
         self.movie.start()
         self.setMovie(self.movie)
