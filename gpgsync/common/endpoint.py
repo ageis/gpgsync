@@ -23,7 +23,6 @@ import dateutil.parser as date_parser
 from io import BytesIO
 from PyQt5 import QtCore, QtWidgets
 
-from . import common
 from .gnupg import *
 
 class URLDownloadError(Exception):
@@ -42,8 +41,9 @@ class InvalidFingerprints(Exception):
 class Endpoint(QtCore.QObject):
     fetched_public_key_signal = QtCore.pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, common):
         super(Endpoint, self).__init__()
+        self.common = common
 
         self.verified = False
         self.fingerprint = b''
@@ -120,9 +120,9 @@ class Endpoint(QtCore.QObject):
                   'http': socks5_address
                 }
 
-                r = common.requests_get(url, proxies=proxies)
+                r = self.self.common.requests_get(url, proxies=proxies)
             else:
-                r = common.requests_get(url)
+                r = self.self.common.requests_get(url)
 
             r.close()
             msg_bytes = r.content
@@ -152,7 +152,7 @@ class Endpoint(QtCore.QObject):
                 continue
 
             # Test for valid fingerprints
-            if common.valid_fp(line):
+            if self.common.valid_fp(line):
                 fingerprints.append(line)
             else:
                 invalid_fingerprints.append(line)
@@ -238,7 +238,7 @@ class Verifier(QtCore.QThread):
         # Test fingerprint and keyserver, and that the key isn't revoked or expired
         success = False
         try:
-            self.log('Downloading {} from keyserver {}'.format(common.fp_to_keyid(self.fingerprint).decode(), self.keyserver.decode()))
+            self.log('Downloading {} from keyserver {}'.format(self.common.fp_to_keyid(self.fingerprint).decode(), self.keyserver.decode()))
             e.fetch_public_key(self.gpg)
         except InvalidFingerprint:
             self.alert_error.emit('Invalid signing key fingerprint.', '')
@@ -343,7 +343,7 @@ class Refresher(QtCore.QThread):
         run_refresher = False
 
         # If there is no connection - skip
-        if not common.internet_available():
+        if not self.common.internet_available():
             return
 
         if self.force:
@@ -363,7 +363,7 @@ class Refresher(QtCore.QThread):
         success = False
         reset_last_checked = True
         try:
-            self.log('Fetching public key {} {}'.format(common.fp_to_keyid(self.e.fingerprint).decode(), self.gpg.get_uid(self.e.fingerprint)))
+            self.log('Fetching public key {} {}'.format(self.common.fp_to_keyid(self.e.fingerprint).decode(), self.gpg.get_uid(self.e.fingerprint)))
             self.e.fetch_public_key(self.gpg)
         except InvalidFingerprint:
             err = 'Invalid signing key fingerprint'
@@ -470,7 +470,7 @@ class Refresher(QtCore.QThread):
         notfound_fingerprints = []
         for fingerprint in fingerprints_to_fetch:
             try:
-                self.log('Fetching public key {} {}'.format(common.fp_to_keyid(fingerprint).decode(), self.gpg.get_uid(fingerprint)))
+                self.log('Fetching public key {} {}'.format(self.common.fp_to_keyid(fingerprint).decode(), self.gpg.get_uid(fingerprint)))
                 self.gpg.recv_key(self.e.keyserver, fingerprint, self.e.use_proxy, self.e.proxy_host, self.e.proxy_port)
             except InvalidKeyserver:
                 return self.finish_with_failure('Invalid keyserver')

@@ -22,8 +22,6 @@ import sys, platform, queue, datetime, requests
 from packaging.version import parse
 from PyQt5 import QtCore, QtWidgets
 
-from . import common
-
 from .gnupg import GnuPG
 from .settings import Settings
 
@@ -36,14 +34,15 @@ from .systray import SysTray
 from .settings_window import SettingsWindow
 
 class GPGSync(QtWidgets.QMainWindow):
-    def __init__(self, app, debug=False):
+    def __init__(self, common, app, debug=False):
         super(GPGSync, self).__init__()
+        self.common = common
         self.app = app
         self.debug = debug
         self.system = platform.system()
         self.setWindowTitle('GPG Sync')
-        self.setWindowIcon(common.get_icon())
-        version_file = common.get_resource_path('version')
+        self.setWindowIcon(self.common.get_icon())
+        version_file = self.common.get_resource_path('version')
         self.version = parse(open(version_file).read().strip())
         self.saved_update_version = self.version
         self.unconfigured_endpoint = None
@@ -51,17 +50,17 @@ class GPGSync(QtWidgets.QMainWindow):
         self.threads = []
 
         # Load settings
-        self.settings = Settings(self.debug)
+        self.settings = Settings(self.common, self.debug)
 
         # Initialize gpg
         self.gpg = GnuPG(appdata_path=self.settings.get_appdata_path(), debug=debug)
         if not self.gpg.is_gpg_available():
             if self.system == 'Linux':
-                common.alert('GnuPG 2.x doesn\'t seem to be installed. Install your operating system\'s gnupg2 package.')
+                self.common.alert('GnuPG 2.x doesn\'t seem to be installed. Install your operating system\'s gnupg2 package.')
             if self.system == 'Darwin':
-                common.alert('GnuPG doesn\'t seem to be installed. Install <a href="https://gpgtools.org/">GPGTools</a>.')
+                self.common.alert('GnuPG doesn\'t seem to be installed. Install <a href="https://gpgtools.org/">GPGTools</a>.')
             if self.system == 'Windows':
-                common.alert('GnuPG doesn\'t seem to be installed. Install <a href="http://gpg4win.org/">Gpg4win</a>.')
+                self.common.alert('GnuPG doesn\'t seem to be installed. Install <a href="http://gpg4win.org/">Gpg4win</a>.')
             sys.exit()
 
         # Initialize endpoints
@@ -246,7 +245,7 @@ class GPGSync(QtWidgets.QMainWindow):
             self.buttons.update_sync_label()
 
     def edit_endpoint_alert_error(self, msg, details='', icon=QtWidgets.QMessageBox.Warning):
-        common.alert(msg, details, icon)
+        self.common.alert(msg, details, icon)
         self.toggle_input(True)
 
     def edit_endpoint_save(self, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
@@ -292,7 +291,7 @@ class GPGSync(QtWidgets.QMainWindow):
 
     def save_endpoint(self):
         # Get values for endpoint
-        fingerprint = common.clean_fp(self.edit_endpoint.fingerprint_edit.text().strip().encode())
+        fingerprint = self.common.clean_fp(self.edit_endpoint.fingerprint_edit.text().strip().encode())
         url         = self.edit_endpoint.url_edit.text().strip().encode()
         keyserver   = self.edit_endpoint.keyserver_edit.text().strip().encode()
         use_proxy   = self.edit_endpoint.use_proxy.checkState() == QtCore.Qt.Checked
@@ -438,7 +437,7 @@ class GPGSync(QtWidgets.QMainWindow):
             self.active_refreshers.append(r)
             r.start()
 
-            sync_string = "Syncing: {} {}".format(self.gpg.get_uid(r.e.fingerprint), common.fp_to_keyid(r.e.fingerprint).decode())
+            sync_string = "Syncing: {} {}".format(self.gpg.get_uid(r.e.fingerprint), self.common.fp_to_keyid(r.e.fingerprint).decode())
             print(sync_string)
             self.toggle_input(False, sync_string)
 
@@ -446,10 +445,10 @@ class GPGSync(QtWidgets.QMainWindow):
         # Show/hide loading graphic
         if enabled:
             self.status_bar.hide_loading()
-            self.systray.setIcon(common.get_systray_icon())
+            self.systray.setIcon(self.common.get_systray_icon())
         else:
             self.status_bar.show_loading()
-            self.systray.setIcon(common.get_systray_syncing_icon())
+            self.systray.setIcon(self.common.get_systray_syncing_icon())
 
         # Disable/enable all input
         if self.unconfigured_endpoint is not None:
@@ -468,7 +467,7 @@ class GPGSync(QtWidgets.QMainWindow):
             self.sync_msg = sync_msg
 
         if len(self.syncing_errors) > 0:
-            self.systray.setIcon(common.get_systray_error_icon())
+            self.systray.setIcon(self.common.get_systray_error_icon())
 
     def check_for_updates(self, force=False):
         self.log("check_for_updates, force={}".format(force))
@@ -500,9 +499,9 @@ class GPGSync(QtWidgets.QMainWindow):
                       'http': socks5_address
                     }
 
-                    r = common.requests_get(url, proxies=proxies)
+                    r = self.common.requests_get(url, proxies=proxies)
                 else:
-                    r = common.requests_get(url)
+                    r = self.common.requests_get(url)
 
                 release = r.json()
             except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
@@ -518,11 +517,11 @@ class GPGSync(QtWidgets.QMainWindow):
                     if self.saved_update_version < latest_version or force:
                         self.show_main_window()
 
-                        common.update_alert(self.version, latest_version, release['html_url'])
+                        self.common.update_alert(self.version, latest_version, release['html_url'])
                         self.saved_update_version = latest_version
                 elif self.version >= latest_version and force:
                     self.show_main_window()
-                    common.alert('No updates available.<br><br><span style="font-weight:normal;">Version {} is the latest version.</span>'.format(latest_version))
+                    self.common.alert('No updates available.<br><br><span style="font-weight:normal;">Version {} is the latest version.</span>'.format(latest_version))
                 self.settings.last_update_check_err = False
             elif release and 'tag_name' not in release:
                 if not self.settings.last_update_check_err or force:
@@ -531,7 +530,7 @@ class GPGSync(QtWidgets.QMainWindow):
                     for key, val in release.items():
                         details += '{}: {}\n\n'.format(key, val)
 
-                    common.alert('Error checking for updates.', details)
+                    self.common.alert('Error checking for updates.', details)
                 self.settings.last_update_check_err = True
 
             self.settings.last_update_check = datetime.datetime.now()

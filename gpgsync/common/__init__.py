@@ -21,6 +21,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime, os, sys, re, platform, inspect, requests, socket
 from PyQt5 import QtCore, QtWidgets, QtGui
 
+from .endpoint import Endpoint, Verifier, Refresher, URLDownloadError, ProxyURLDownloadError, \
+    InvalidFingerprints
+
+from .gnupg import GnuPG, InvalidFingerprint, InvalidKeyserver, KeyserverError, NotFoundOnKeyserver, \
+    NotFoundInKeyring, RevokedKey, ExpiredKey, VerificationError, BadSignature, SignedWithWrongKey
+
+from .settings import Settings, OldEndpoint
+
 def alert(msg, details='', icon=QtWidgets.QMessageBox.Warning):
     d = QtWidgets.QMessageBox()
     d.setWindowTitle('GPG Sync')

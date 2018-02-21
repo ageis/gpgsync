@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import re, subprocess, os, platform, tempfile, shutil
 from urllib.parse import urlparse
-from . import common
 
 class InvalidFingerprint(Exception):
     pass
@@ -53,7 +52,8 @@ class SignedWithWrongKey(Exception):
     pass
 
 class GnuPG(object):
-    def __init__(self, appdata_path=None, debug=False):
+    def __init__(self, common, appdata_path=None, debug=False):
+        self.common = common
         self.appdata_path = appdata_path
         self.debug = debug
 
@@ -96,14 +96,14 @@ class GnuPG(object):
     def recv_key(self, keyserver, fp, use_proxy, proxy_host, proxy_port):
         self.log("recv_key: keyserver={}, fp={}, use_proxy={}, proxy_host={}, proxy_port={}".format(keyserver, fp, use_proxy, proxy_host, proxy_port))
 
-        if not common.valid_fp(fp):
+        if not self.common.valid_fp(fp):
             raise InvalidFingerprint(fp)
 
-        fp = common.clean_fp(fp)
-        keyserver = common.clean_keyserver(keyserver).decode()
+        fp = self.common.clean_fp(fp)
+        keyserver = self.common.clean_keyserver(keyserver).decode()
 
         default_hkps_server = 'hkps://hkps.pool.sks-keyservers.net'
-        ca_cert_file = common.get_resource_path('sks-keyservers.netCA.pem')
+        ca_cert_file = self.common.get_resource_path('sks-keyservers.netCA.pem')
 
         # Create gpg.conf and dirmngr.conf
         dirmngr_conf = ''
@@ -135,12 +135,12 @@ class GnuPG(object):
         self.import_to_default_homedir(fp)
 
     def get_pubkey_filename_on_disk(self, fp):
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
         filename = fp.decode() + '.asc'
         return os.path.join(self.appdata_path, filename)
 
     def export_pubkey_to_disk(self, fp):
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
         filename = self.get_pubkey_filename_on_disk(fp)
 
         self.log("export_pubkey_to_disk: fp={}".format(fp))
@@ -157,7 +157,7 @@ class GnuPG(object):
         open(filename, 'w').write(pubkey.decode())
 
     def import_pubkey_from_disk(self, fp):
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
         filename = self.get_pubkey_filename_on_disk(fp)
 
         self.log("import_pubkey_from_disk: fp={}".format(fp))
@@ -174,7 +174,7 @@ class GnuPG(object):
             pass
 
     def delete_pubkey_from_disk(self, fp):
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
         filename = self.get_pubkey_filename_on_disk(fp)
 
         self.log("delete_pubkey_from_disk: fp={}".format(fp))
@@ -196,10 +196,10 @@ class GnuPG(object):
     def test_key(self, fp):
         self.log("test_key: fp={}".format(fp))
 
-        if not common.valid_fp(fp):
+        if not self.common.valid_fp(fp):
             raise InvalidFingerprint(fp)
 
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
         out,err = self._gpg(['--with-colons', '--list-keys', fp])
 
         if b"error reading key: No public key" in err:
@@ -216,10 +216,10 @@ class GnuPG(object):
     def get_uid(self, fp):
         self.log("get_uid: fp={}".format(fp))
 
-        if not common.valid_fp(fp):
+        if not self.common.valid_fp(fp):
             raise InvalidFingerprint(fp)
 
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
 
         if fp in self.uids:
             return self.uids[fp]
@@ -237,10 +237,10 @@ class GnuPG(object):
     def verify(self, msg_sig, msg, fp):
         self.log("verify: (not displaying msg_sig, msg), fp={}".format(fp))
 
-        if not common.valid_fp(fp):
+        if not self.common.valid_fp(fp):
             raise InvalidFingerprint(fp)
 
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
 
         # Write message and detached signature to disk
         msg_sig_filename = tempfile.NamedTemporaryFile(delete=False).name
@@ -277,10 +277,10 @@ class GnuPG(object):
     def list_all_keyids(self, fp):
         self.log("list_all_keyids: fp={}".format(fp))
 
-        if not common.valid_fp(fp):
+        if not self.common.valid_fp(fp):
             raise InvalidFingerprint(fp)
 
-        fp = common.clean_fp(fp)
+        fp = self.common.clean_fp(fp)
 
         out, err = self._gpg(['--keyid-format', '0xlong', '--list-keys', fp])
         if b'gpg: error reading key: No public key' in err:

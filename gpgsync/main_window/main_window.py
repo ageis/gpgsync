@@ -32,10 +32,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.system = platform.system()
 
+        # Load version string
         version_file = self.common.get_resource_path('version')
         with open(version_file) as f:
             self.version_string = f.read().strip()
 
+        # Load settings
+        self.settings = self.common.Settings(self.common, self.debug)
+
+        # Build the window
         self.setWindowTitle('GPG Sync')
         self.setWindowIcon(common.get_icon())
 
