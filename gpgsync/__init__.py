@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os, sys, platform
 from PyQt5 import QtCore, QtWidgets
 
-from . import common
+from .common import Common
 from .main_window import MainWindow
 
 class Application(QtWidgets.QApplication):
@@ -40,7 +40,8 @@ def main():
         debug = True
 
     app = Application()
-    main_window = MainWindow(app, common, debug)
+    common = Common(debug)
+    main_window = MainWindow(app, common)
 
     sys.exit(app.exec_())
 

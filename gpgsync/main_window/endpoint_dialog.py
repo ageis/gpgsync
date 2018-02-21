@@ -21,12 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 class EndpointDialog(QtWidgets.QDialog):
-    def __init__(self, common, new, debug=False):
+    def __init__(self, common, new):
         super(EndpointDialog, self).__init__()
-        self.debug = debug
-        self.log('__init__')
-
         self.common = common
+        self.common.log('EndpointDialog', '__init__')
+
         self.new = new
 
         # Dialog settings
@@ -134,7 +133,7 @@ class EndpointDialog(QtWidgets.QDialog):
         """
         Show or hide advanced options
         """
-        self.log('advanced_toggle')
+        self.common.log('EndpointDialog', 'advanced_toggle')
         if self.advanced_options.isVisible():
             self.advanced_options.hide()
             self.advanced_toggle_button.setText('Show advanced options')
@@ -159,16 +158,34 @@ class EndpointDialog(QtWidgets.QDialog):
         """
         Save button clicked.
         """
-        self.log('save_clicked')
+        self.common.log('EndpointDialog', 'save_clicked')
+
+        # Get values for endpoint
+        fingerprint = self.common.clean_fp(self.fingerprint_edit.text().strip().encode())
+        url = self.url_edit.text().strip().encode()
+        keyserver = self.keyserver_edit.text().strip().encode()
+        use_proxy = self.use_proxy.checkState() == QtCore.Qt.Checked
+        proxy_host = self.proxy_host_edit.text().strip().encode()
+        proxy_port = self.proxy_port_edit.text().strip().encode()
+
+        """
+        # Show loading graphic, and disable all input until it's finished Verifying
+        self.toggle_input(False)
+
+        # Run the verifier inside a new thread
+        self.verifier = Verifier(self.debug, self.gpg, self.status_q, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port)
+        self.common.log('EndpointDialog', "save_endpoint, adding Verifier thread ({} threads right now)".format(len(self.threads)))
+        self.verifier.alert_error.connect(self.edit_endpoint_alert_error)
+        self.verifier.success.connect(self.edit_endpoint_save)
+        self.verifier.finished.connect(self.clean_threads)
+        self.verifier.start()
+        """
+
         self.close()
 
     def cancel_clicked(self):
         """
         Cancel button clicked.
         """
-        self.log('cancel_clicked')
+        self.common.log('EndpointDialog', 'cancel_clicked')
         self.close()
-
-    def log(self, msg):
-        if self.debug:
-            print("[EndpointDialog] {}".format(msg))

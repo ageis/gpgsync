@@ -22,13 +22,10 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from .endpoint_dialog import EndpointDialog
 
 class EndpointList(QtWidgets.QWidget):
-    def __init__(self, common, settings, debug=False):
+    def __init__(self, common):
         super(EndpointList, self).__init__()
-        self.debug = debug
-        self.log('__init__')
-
         self.common = common
-        self.settings = settings
+        self.common.log('EndpointList', '__init__')
 
         # Endpoint layout
         endpoint_layout = QtWidgets.QHBoxLayout()
@@ -54,19 +51,15 @@ class EndpointList(QtWidgets.QWidget):
         """
         Redraw all endpoints based on what's in settings
         """
-        self.log('refresh')
+        self.common.log('EndpointList', 'refresh')
 
-        for e in self.settings.endpoints:
-            self.log(str(e))
+        for e in self.common.settings.endpoints:
+            self.common.log('EndpointList', str(e))
 
     def add_endpoint(self):
         """
         Open a new dialog to add an endpoint
         """
-        self.log('add_endpoint')
-        d = EndpointDialog(self.common, True, self.debug)
+        self.common.log('EndpointList', 'add_endpoint')
+        d = EndpointDialog(self.common, True)
         d.exec_()
-
-    def log(self, msg):
-        if self.debug:
-            print("[EndpointList] {}".format(msg))

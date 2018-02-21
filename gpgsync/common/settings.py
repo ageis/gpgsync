@@ -24,9 +24,8 @@ import dateutil.parser as date_parser
 from .endpoint import Endpoint
 
 class Settings(object):
-    def __init__(self, common, debug):
+    def __init__(self, common):
         self.common = common
-        self.debug = debug
 
         system = platform.system()
         if system == 'Windows':
@@ -37,13 +36,9 @@ class Settings(object):
         else:
             self.appdata_path = os.path.expanduser("~/.config/gpgsync")
 
-        self.log("appdata_path: {}".format(self.appdata_path))
+        self.common.log('Settings', "appdata_path: {}".format(self.appdata_path))
 
         self.load()
-
-    def log(self, msg):
-        if self.debug:
-            print("[Settings] {}".format(msg))
 
     def get_appdata_path(self):
         return self.appdata_path
@@ -58,7 +53,7 @@ class Settings(object):
                 # Parse the json file
                 self.settings = json.load(open(settings_file, 'r'))
                 load_settings = True
-                self.log("load: settings loaded from {}".format(settings_file))
+                self.common.log('Settings', "load: settings loaded from {}".format(settings_file))
 
                 # Copy json settings into self
                 if 'endpoints' in self.settings:
@@ -104,12 +99,12 @@ class Settings(object):
                 self.configure_run_automatically()
 
             except:
-                self.log("load: error loading settings file, starting from scratch")
+                self.common.log('Settings', "load: error loading settings file, starting from scratch")
                 print("Error loading settings file, starting from scratch")
                 start_new_settings = True
 
         else:
-            self.log("load: settings file doesn't exist")
+            self.common.log('Settings', "load: settings file doesn't exist")
 
             # Try migrating from old settings
             if not self.migrate_settings_010_011():
@@ -131,7 +126,7 @@ class Settings(object):
             self.configure_run_automatically()
 
     def save(self):
-        self.log("save")
+        self.common.log('Settings', "save")
         self.settings = {
             'endpoints': [e.serialize() for e in self.endpoints],
             'run_automatically': self.run_automatically,
@@ -155,7 +150,7 @@ class Settings(object):
         return True
 
     def configure_run_automatically(self):
-        self.log("configure_run_automatically")
+        self.common.log('Settings', "configure_run_automatically")
 
         if platform.system() == 'Darwin':
             share_filename = 'org.firstlook.gpgsync.plist'
@@ -185,7 +180,7 @@ class Settings(object):
     def migrate_settings_010_011(self):
         old_settings_path = os.path.expanduser("~/.gpgsync")
         if os.path.isfile(old_settings_path):
-            self.log("migrate_settings_010_011: there is an old settings file, converting it to a new one")
+            self.common.log('Settings', "migrate_settings_010_011: there is an old settings file, converting it to a new one")
 
             # Open it, and modify it to use a different Endpoint object
             # See https://github.com/firstlookmedia/gpgsync/issues/104
@@ -195,7 +190,7 @@ class Settings(object):
             try:
                 # Unpickle the old settings data
                 settings = pickle.loads(pickle_data)
-                self.log("migrate_settings_010_011: settings loaded from {}".format(old_settings_path))
+                self.common.log('Settings', "migrate_settings_010_011: settings loaded from {}".format(old_settings_path))
 
                 # Copy pickle settings into self
                 if 'endpoints' in settings:
@@ -256,7 +251,7 @@ class Settings(object):
                 os.remove(old_settings_path)
                 return True
             except:
-                self.log("migrate_settings_010_011: exception thrown, just start over with settings")
+                self.common.log('Settings', "migrate_settings_010_011: exception thrown, just start over with settings")
                 return False
 
         return False

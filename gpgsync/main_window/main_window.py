@@ -18,32 +18,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import platform
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 from .endpoint_list import EndpointList
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, app, common, debug=False):
+    def __init__(self, app, common):
         super(MainWindow, self).__init__()
-        self.debug = debug
-        self.log('__init__')
+        self.common = common
+        self.common.log('MainWindow', '__init__')
 
         self.app = app
-        self.common = common
-        self.system = platform.system()
 
         # Load version string
         version_file = self.common.get_resource_path('version')
         with open(version_file) as f:
             self.version_string = f.read().strip()
 
-        # Load settings
-        self.settings = self.common.Settings(self.common, self.debug)
-
         # Build the window
         self.setWindowTitle('GPG Sync')
-        self.setWindowIcon(common.get_icon())
+        self.setWindowIcon(common.icon)
 
         # Header
         header_widget = QtWidgets.QWidget()
@@ -61,7 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
         header_widget.setLayout(header_layout)
 
         # Endpoint list
-        self.endpoint_list = EndpointList(self.common, self.settings, self.debug)
+        self.endpoint_list = EndpointList(self.common)
 
         # Status bar
         version_label = QtWidgets.QLabel(self.version_string)
@@ -80,7 +74,3 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(central_widget)
 
         self.show()
-
-    def log(self, msg):
-        if self.debug:
-            print("[MainWindow] {}".format(msg))
