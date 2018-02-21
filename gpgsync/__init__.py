@@ -22,7 +22,7 @@ import os, sys, platform
 from PyQt5 import QtCore, QtWidgets
 
 from . import common
-from .mainwindow import MainWindow
+from .main_window import MainWindow
 
 class Application(QtWidgets.QApplication):
     def __init__(self):
