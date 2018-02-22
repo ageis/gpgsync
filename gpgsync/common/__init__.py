@@ -85,13 +85,20 @@ class Common(object):
         if self.debug:
             print("[{}] {}".format(module, msg))
 
-    def alert(self, msg, details='', icon=QtWidgets.QMessageBox.Warning):
+    def alert(self, msg, details='', question=False):
         d = QtWidgets.QMessageBox()
         d.setWindowTitle('GPG Sync')
         d.setText(msg)
 
         if details:
             d.setDetailedText(details)
+
+        if question:
+            icon = QtWidgets.QMessageBox.Question
+            d.addButton(QtWidgets.QPushButton('Cancel'), QtWidgets.QMessageBox.NoRole)
+            d.addButton(QtWidgets.QPushButton('Yes'), QtWidgets.QMessageBox.YesRole)
+        else:
+            icon = QtWidgets.QMessageBox.Warning
 
         d.setIcon(icon)
         d.exec_()

@@ -142,3 +142,4 @@ class EndpointList(QtWidgets.QWidget):
         Delete the endpoint
         """
         self.common.log('EndpointList', 'delete_clicked {}'.format(e.url))
+        self.common.alert('Are you sure you want to delete this endpoint?', question=True)
