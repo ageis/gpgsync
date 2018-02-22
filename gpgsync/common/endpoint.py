@@ -174,33 +174,19 @@ class Verifier(QtCore.QThread):
     status_update = QtCore.pyqtSignal(str)
     success = QtCore.pyqtSignal()
 
-    def __init__(self, common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
+    def __init__(self, common, endpoint):
         super(Verifier, self).__init__()
         self.common = common
         self.common.log('Verifier', '__init__')
 
-        self.fingerprint = fingerprint
-        self.url = url
-        self.keyserver = keyserver
-        self.use_proxy = use_proxy
-        self.proxy_host = proxy_host
-        self.proxy_port = proxy_port
+        self.e = endpoint
 
     def run(self):
         self.common.log('Verifier', 'run')
 
-        # Make an endpoint
-        e = Endpoint(self.common)
-        e.fingerprint = self.fingerprint
-        e.url = self.url
-        e.keyserver = self.keyserver
-        e.use_proxy = self.use_proxy
-        e.proxy_host = self.proxy_host
-        e.proxy_port = self.proxy_port
-
         # Make sure fingerprint looks like a valid fingerprint
         success = False
-        if not self.common.valid_fp(self.fingerprint):
+        if not self.common.valid_fp(self.e.fingerprint):
             self.alert_error.emit('GPG Fingerprint does not look like a valid fingerprint', '')
         else:
             success = True
@@ -209,7 +195,7 @@ class Verifier(QtCore.QThread):
 
         # Make sure URL is in the right format
         success = False
-        o = urlparse(self.url)
+        o = urlparse(self.e.url)
         if (o.scheme != b'http' and o.scheme != b'https') or o.netloc == '':
             self.alert_error.emit('URL is invalid', '')
         else:
@@ -220,7 +206,7 @@ class Verifier(QtCore.QThread):
         # Make sure this isn't a duplicate endpoint
         success = True
         for existing_e in self.common.settings.endpoints:
-            if e.url == existing_e.url:
+            if self.e.url == existing_e.url:
                 self.alert_error.emit('An endpoint with this URL is already added', '')
                 success = False
                 break
@@ -230,8 +216,8 @@ class Verifier(QtCore.QThread):
         # Test loading URL
         success = False
         try:
-            self.status_update.emit('Loading URL {}'.format(self.url.decode()))
-            msg_bytes = e.fetch_msg_url()
+            self.status_update.emit('Loading URL {}'.format(self.e.url.decode()))
+            msg_bytes = self.e.fetch_msg_url()
         except ProxyURLDownloadError as e:
             self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings', self.url.decode())
         except URLDownloadError as e:
@@ -244,8 +230,8 @@ class Verifier(QtCore.QThread):
         # Test loading signature URL
         success = False
         try:
-            self.status_update.emit('Loading URL {}'.format(e.sig_url().decode()))
-            msg_sig_bytes = e.fetch_msg_sig_url()
+            self.status_update.emit('Loading URL {}'.format(self.e.sig_url().decode()))
+            msg_sig_bytes = self.e.fetch_msg_sig_url()
         except ProxyURLDownloadError as e:
             self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings.', self.sig_url.decode())
         except URLDownloadError as e:
@@ -258,8 +244,8 @@ class Verifier(QtCore.QThread):
         # Test fingerprint and keyserver, and that the key isn't revoked or expired
         success = False
         try:
-            self.status_update.emit('Downloading {} from keyserver {}'.format(self.common.fp_to_keyid(self.fingerprint).decode(), self.keyserver.decode()))
-            e.fetch_public_key(self.common.gpg)
+            self.status_update.emit('Downloading {} from keyserver {}'.format(self.common.fp_to_keyid(self.e.fingerprint).decode(), self.e.keyserver.decode()))
+            self.e.fetch_public_key(self.common.gpg)
         except InvalidFingerprint:
             self.alert_error.emit('Invalid signing key fingerprint', '')
         except InvalidKeyserver:
@@ -283,7 +269,7 @@ class Verifier(QtCore.QThread):
         success = False
         try:
             self.status_update.emit('Verifying signature')
-            e.verify_fingerprints_sig(self.common.gpg, msg_sig_bytes, msg_bytes)
+            self.e.verify_fingerprints_sig(self.common.gpg, msg_sig_bytes, msg_bytes)
         except VerificationError:
             self.alert_error.emit('Signature does not verify.', '')
         except BadSignature:
@@ -301,7 +287,7 @@ class Verifier(QtCore.QThread):
         success = False
         try:
             self.status_update.emit('Validating fingerprint list')
-            e.get_fingerprint_list(msg_bytes)
+            self.e.get_fingerprint_list(msg_bytes)
         except InvalidFingerprints as e:
             self.alert_error.emit('Invalid fingerprints', str(e), '')
         else:
@@ -309,7 +295,6 @@ class Verifier(QtCore.QThread):
         if not success:
             return self.finish_with_failure()
 
-        self.status_update.emit('Endpoint saved')
         self.success.emit()
         self.finished.emit()
 

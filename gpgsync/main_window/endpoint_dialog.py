@@ -31,8 +31,10 @@ class EndpointDialog(QtWidgets.QDialog):
         self.common.log('EndpointDialog', '__init__')
 
         if endpoint:
+            self.action = 'edit'
             self.endpoint = endpoint
         else:
+            self.action = 'add'
             self.endpoint = Endpoint(self.common)
 
         # Dialog settings
@@ -182,14 +184,14 @@ class EndpointDialog(QtWidgets.QDialog):
         self.common.log('EndpointDialog', 'save_clicked')
 
         # Get values for endpoint
-        fingerprint = self.common.clean_fp(self.fingerprint_edit.text().strip().encode())
-        url = self.url_edit.text().strip().encode()
-        keyserver = self.keyserver_edit.text().strip().encode()
-        use_proxy = self.use_proxy.checkState() == QtCore.Qt.Checked
-        proxy_host = self.proxy_host_edit.text().strip().encode()
-        proxy_port = self.proxy_port_edit.text().strip().encode()
+        self.endpoint.fingerprint = self.common.clean_fp(self.fingerprint_edit.text().strip().encode())
+        self.endpoint.url = self.url_edit.text().strip().encode()
+        self.endpoint.keyserver = self.keyserver_edit.text().strip().encode()
+        self.endpoint.use_proxy = self.use_proxy.checkState() == QtCore.Qt.Checked
+        self.endpoint.proxy_host = self.proxy_host_edit.text().strip().encode()
+        self.endpoint.proxy_port = self.proxy_port_edit.text().strip().encode()
 
-        d = VerifierDialog(self.common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port)
+        d = VerifierDialog(self.common, self.endpoint, self.action)
         d.success.connect(self.success)
         d.exec_()
 
@@ -220,17 +222,13 @@ class VerifierDialog(QtWidgets.QDialog):
     success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal()
 
-    def __init__(self, common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
+    def __init__(self, common, endpoint, action):
         super(VerifierDialog, self).__init__()
         self.common = common
         self.common.log('VerifierDialog', '__init__')
 
-        self.fingerprint = fingerprint
-        self.url = url
-        self.keyserver = keyserver
-        self.use_proxy = use_proxy
-        self.proxy_host = proxy_host
-        self.proxy_port = proxy_port
+        self.e = endpoint
+        self.action = action
 
         # Dialog settings
         self.setModal(True)
@@ -266,8 +264,7 @@ class VerifierDialog(QtWidgets.QDialog):
         self.resize_dialog()
 
         # Run the verifier inside a new thread
-        self.v = Verifier(self.common, self.fingerprint, self.url, self.keyserver,
-                            self.use_proxy, self.proxy_host, self.proxy_port)
+        self.v = Verifier(self.common, self.e)
         self.v.alert_error.connect(self.alert_error)
         self.v.status_update.connect(self.status_update)
         self.v.success.connect(self.save)
@@ -288,18 +285,13 @@ class VerifierDialog(QtWidgets.QDialog):
     def save(self):
         self.common.log('VerifierDialog', 'save')
 
-        # Make the endpoint
-        e = Endpoint(self.common)
-        e.fingerprint = self.fingerprint
-        e.url = self.url
-        e.keyserver = self.keyserver
-        e.use_proxy = self.use_proxy
-        e.proxy_host = self.proxy_host
-        e.proxy_port = self.proxy_port
-
-        # Add the endpoint and save settings
-        self.common.settings.endpoints.append(e)
-        self.common.settings.save()
+        if self.action == 'add':
+            # Add the endpoint and save settings
+            self.common.settings.endpoints.append(self.e)
+            self.common.settings.save()
+        elif self.action == 'edit':
+            # Just save settings, because it's already added
+            self.common.settings.save()
 
         self.terminate_thread()
         self.success.emit()

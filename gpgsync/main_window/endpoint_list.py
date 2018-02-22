@@ -137,6 +137,10 @@ class EndpointList(QtWidgets.QWidget):
         Open a new dialog to edit the endpoint
         """
         self.common.log('EndpointList', 'edit_clicked {}'.format(e.url))
+        d = EndpointDialog(self.common, e)
+        d.finished.connect(self.refresh)
+        d.exec_()
+        self.refresh()
 
     def delete_clicked(self, e):
         """
