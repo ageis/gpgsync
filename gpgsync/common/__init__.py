@@ -100,13 +100,13 @@ class Common(object):
             QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
 
     def valid_fp(self, fp):
-        return re.match(b'^[A-F\d]{40}$', clean_fp(fp))
+        return re.match(b'^[A-F\d]{40}$', self.clean_fp(fp))
 
     def clean_fp(self, fp):
         return fp.strip().replace(b' ', b'').upper()
 
     def fp_to_keyid(self, fp):
-        return '0x{}'.format(clean_fp(fp)[-16:].decode()).encode()
+        return '0x{}'.format(self.clean_fp(fp)[-16:].decode()).encode()
 
     def clean_keyserver(self, keyserver):
         if b'://' not in keyserver:

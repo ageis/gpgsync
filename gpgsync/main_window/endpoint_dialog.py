@@ -18,7 +18,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import queue
 from PyQt5 import QtCore, QtWidgets, QtGui
+
+from ..common.endpoint import Endpoint, Verifier
+from ..common.loading_animation import LoadingAnimation
 
 class EndpointDialog(QtWidgets.QDialog):
     def __init__(self, common, new):
@@ -35,8 +39,6 @@ class EndpointDialog(QtWidgets.QDialog):
             self.setWindowTitle('Add Endpoint')
         else:
             self.setWindowTitle('Edit Endpoint')
-
-        self.endpoint = None
 
         # Instructions label
         instructions_label = QtWidgets.QLabel("Each endpoint has an authority key fingerprint and a fingerprints URL. Ask your organization's techie for this info.")
@@ -168,22 +170,88 @@ class EndpointDialog(QtWidgets.QDialog):
         proxy_host = self.proxy_host_edit.text().strip().encode()
         proxy_port = self.proxy_port_edit.text().strip().encode()
 
-        # Disable buttons while verifying
-        self.save_button.setEnabled(False)
-        self.cancel_button.setEnabled(False)
-
-        # Run the verifier inside a new thread
-        verifier = Verifier(self.debug, self.gpg, self.status_q, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port)
-        verifier.alert_error.connect(self.edit_endpoint_alert_error)
-        verifier.success.connect(self.edit_endpoint_save)
-        verifier.finished.connect(self.clean_threads)
-        verifier.start()
-
-        self.close()
+        d = VerifierDialog(self.common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port)
+        d.exec_()
 
     def cancel_clicked(self):
         """
         Cancel button clicked.
         """
         self.common.log('EndpointDialog', 'cancel_clicked')
+        self.close()
+
+
+class VerifierDialog(QtWidgets.QDialog):
+    def __init__(self, common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
+        super(VerifierDialog, self).__init__()
+        self.common = common
+        self.common.log('VerifierDialog', '__init__')
+
+        self.fingerprint = fingerprint
+        self.url = url
+        self.keyserver = keyserver
+        self.use_proxy = use_proxy
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
+
+        # Dialog settings
+        self.setModal(True)
+        self.setWindowTitle('Verify Endpoint')
+
+        # Loading animation
+        loading_animation = LoadingAnimation(self.common)
+
+        # Status label
+        self.status_label = QtWidgets.QLabel('...')
+
+        # Status layout
+        status_layout = QtWidgets.QHBoxLayout()
+        status_layout.addWidget(loading_animation)
+        status_layout.addWidget(self.status_label)
+
+        # Cancel button
+        cancel_button = QtWidgets.QPushButton('Cancel')
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(cancel_button)
+        buttons_layout.addStretch()
+
+        # Layout
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(status_layout)
+        layout.addLayout(buttons_layout)
+        self.setLayout(layout)
+        self.adjustSize()
+
+        # Run the verifier inside a new thread
+        self.v = Verifier(self.common, self.fingerprint, self.url, self.keyserver,
+                            self.use_proxy, self.proxy_host, self.proxy_port)
+        self.v.alert_error.connect(self.alert_error)
+        self.v.status_update.connect(self.status_update)
+        self.v.success.connect(self.save)
+        self.v.start()
+
+    def alert_error(self, msg, details=''):
+        self.common.log('VerifierDialog', 'alert_error, msg={}, details={}'.format(msg, details))
+        self.close_when_thread_finishes()
+        self.common.alert(msg, details)
+
+    def status_update(self, msg):
+        self.common.log('VerifierDialog', msg)
+        self.status_label.setText(msg)
+        self.adjustSize()
+
+    def save(self, endpoint):
+        self.common.log('VerifierDialog', 'save')
+
+        # Add the endpoint and save settings
+        self.common.settings.endpoints.append(endpoint)
+        self.common.settings.save()
+
+        self.close_when_thread_finishes()
+
+    def close_when_thread_finishes(self):
+        self.v.wait(500)
+        if self.v.isRunning():
+            self.v.terminate()
         self.close()

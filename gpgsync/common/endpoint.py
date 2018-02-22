@@ -23,6 +23,7 @@ import socks
 import uuid
 import datetime
 import dateutil.parser as date_parser
+from urllib.parse import urlparse
 from io import BytesIO
 from PyQt5 import QtCore, QtWidgets
 
@@ -123,9 +124,9 @@ class Endpoint(QtCore.QObject):
                   'http': socks5_address
                 }
 
-                r = self.self.common.requests_get(url, proxies=proxies)
+                r = self.common.requests_get(url, proxies=proxies)
             else:
-                r = self.self.common.requests_get(url)
+                r = self.common.requests_get(url)
 
             r.close()
             msg_bytes = r.content
@@ -165,15 +166,17 @@ class Endpoint(QtCore.QObject):
 
         return fingerprints
 
+
 class Verifier(QtCore.QThread):
     alert_error = QtCore.pyqtSignal(str, str)
-    success = QtCore.pyqtSignal(bytes, bytes, bytes, bool, bytes, bytes)
+    status_update = QtCore.pyqtSignal(str)
+    success = QtCore.pyqtSignal(Endpoint)
 
-    def __init__(self, debug, gpg, q, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
+    def __init__(self, common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
         super(Verifier, self).__init__()
-        self.debug = debug
-        self.gpg = gpg
-        self.q = q
+        self.common = common
+        self.common.log('Verifier', '__init__')
+
         self.fingerprint = fingerprint
         self.url = url
         self.sig_url = self.url + b'.sig'
@@ -182,24 +185,11 @@ class Verifier(QtCore.QThread):
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
 
-    def finish_with_failure(self):
-        self.q.add_message(type='clear')
-        self.finished.emit()
-
-    def log(self, message, timeout=None):
-        if self.debug:
-            print("[Verifier] {}".format(message))
-
-        if timeout:
-            self.q.add_message(message, timeout=timeout)
-        else:
-            self.q.add_message(message)
-
     def run(self):
-        print("Verifying endpoint with authority key {}".format(self.fingerprint.decode()))
+        self.common.log('Verifier', 'run')
 
         # Make an endpoint
-        e = Endpoint()
+        e = Endpoint(self.common)
         e.fingerprint = self.fingerprint
         e.url = self.url
         e.sig_url = self.sig_url
@@ -208,58 +198,12 @@ class Verifier(QtCore.QThread):
         e.proxy_host = self.proxy_host
         e.proxy_port = self.proxy_port
 
-        # Test loading URL
+        # Make sure fingerprint looks like a valid fingerprint
         success = False
-        try:
-            self.log('Testing downloading URL {}'.format(self.url.decode()))
-            msg_bytes = e.fetch_msg_url()
-        except ProxyURLDownloadError as e:
-            self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings.', str(e))
-        except URLDownloadError as e:
-            self.alert_error.emit('URL failed to download: Check your internet connection.', str(e))
+        if not self.common.valid_fp(self.fingerprint):
+            self.alert_error.emit('GPG Fingerprint does not look like a valid fingerprint', '')
         else:
             success = True
-
-        if not success:
-            return self.finish_with_failure()
-
-        # Test loading signature URL
-        success = False
-        try:
-            self.log('Testing downloading URL {}'.format(self.sig_url.decode()))
-            msg_sig_bytes = e.fetch_msg_sig_url()
-        except ProxyURLDownloadError as e:
-            self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings.', str(e))
-        except URLDownloadError as e:
-            self.alert_error.emit('URL failed to download: Check your internet connection.', str(e))
-        else:
-            success = True
-
-        if not success:
-            return self.finish_with_failure()
-
-        # Test fingerprint and keyserver, and that the key isn't revoked or expired
-        success = False
-        try:
-            self.log('Downloading {} from keyserver {}'.format(self.common.fp_to_keyid(self.fingerprint).decode(), self.keyserver.decode()))
-            e.fetch_public_key(self.gpg)
-        except InvalidFingerprint:
-            self.alert_error.emit('Invalid signing key fingerprint.', '')
-        except InvalidKeyserver:
-            self.alert_error.emit('Invalid keyserver.', '')
-        except KeyserverError:
-            self.alert_error.emit('Error with keyserver {}.'.format(self.keyserver.decode()), '')
-        except NotFoundOnKeyserver:
-            self.alert_error.emit('Signing key is not found on keyserver. Upload signing key and try again.', '')
-        except NotFoundInKeyring:
-            self.alert_error.emit('Signing key is not found in keyring. Something went wrong.', '')
-        except RevokedKey:
-            self.alert_error.emit('The signing key is revoked.', '')
-        except ExpiredKey:
-            self.alert_error.emit('The signing key is expired.', '')
-        else:
-            success = True
-
         if not success:
             return self.finish_with_failure()
 
@@ -267,18 +211,69 @@ class Verifier(QtCore.QThread):
         success = False
         o = urlparse(self.url)
         if (o.scheme != b'http' and o.scheme != b'https') or o.netloc == '':
-            self.alert_error.emit('URL is invalid.', '')
+            self.alert_error.emit('URL is invalid', '')
         else:
             success = True
+        if not success:
+            return self.finish_with_failure()
 
+        # Test loading URL
+        success = False
+        try:
+            self.status_update.emit('Loading URL {}'.format(self.url.decode()))
+            msg_bytes = e.fetch_msg_url()
+        except ProxyURLDownloadError as e:
+            self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings', self.url.decode())
+        except URLDownloadError as e:
+            self.alert_error.emit('URL failed to download: Check your internet connection.', self.url.decode())
+        else:
+            success = True
+        if not success:
+            return self.finish_with_failure()
+
+        # Test loading signature URL
+        success = False
+        try:
+            self.status_update.emit('Loading URL {}'.format(self.sig_url.decode()))
+            msg_sig_bytes = e.fetch_msg_sig_url()
+        except ProxyURLDownloadError as e:
+            self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings.', self.sig_url.decode())
+        except URLDownloadError as e:
+            self.alert_error.emit('URL failed to download: Check your internet connection.', self.sig_url.decode())
+        else:
+            success = True
+        if not success:
+            return self.finish_with_failure()
+
+        # Test fingerprint and keyserver, and that the key isn't revoked or expired
+        success = False
+        try:
+            self.status_update.emit('Downloading {} from keyserver {}'.format(self.common.fp_to_keyid(self.fingerprint).decode(), self.keyserver.decode()))
+            e.fetch_public_key(self.common.gpg)
+        except InvalidFingerprint:
+            self.alert_error.emit('Invalid signing key fingerprint', '')
+        except InvalidKeyserver:
+            self.alert_error.emit('Invalid keyserver', '')
+        except KeyserverError:
+            self.alert_error.emit('Error with keyserver {}'.format(self.keyserver.decode()), '')
+        except NotFoundOnKeyserver:
+            self.alert_error.emit('Signing key is not found on keyserver. Upload signing key and try again', '')
+        except NotFoundInKeyring:
+            self.alert_error.emit('Signing key is not found in keyring. Something went wrong', '')
+        except RevokedKey:
+            self.alert_error.emit('The signing key is revoked', '')
+        except ExpiredKey:
+            self.alert_error.emit('The signing key is expired', '')
+        else:
+            success = True
         if not success:
             return self.finish_with_failure()
 
         # After downloading URL, test that it's signed by signing key
         success = False
         try:
-            self.log('Verifying signature')
-            e.verify_fingerprints_sig(self.gpg, msg_sig_bytes, msg_bytes)
+            self.status_update.emit('Verifying signature')
+            e.verify_fingerprints_sig(self.common.gpg, msg_sig_bytes, msg_bytes)
         except VerificationError:
             self.alert_error.emit('Signature does not verify.', '')
         except BadSignature:
@@ -289,26 +284,29 @@ class Verifier(QtCore.QThread):
             self.alert_error.emit('Valid signature, but signed with wrong signing key.', '')
         else:
             success = True
-
         if not success:
             return self.finish_with_failure()
 
         # Test that it's a list of fingerprints
         success = False
         try:
-            self.log('Validating fingerprint list')
+            self.status_update.emit('Validating fingerprint list')
             e.get_fingerprint_list(msg_bytes)
         except InvalidFingerprints as e:
             self.alert_error.emit('Invalid fingerprints', str(e), '')
         else:
             success = True
-
         if not success:
             return self.finish_with_failure()
 
-        self.log('Endpoint saved', 4000)
-        self.success.emit(self.fingerprint, self.url, self.keyserver, self.use_proxy, self.proxy_host, self.proxy_port)
+        self.status_update.emit('Endpoint saved')
+        self.success.emit(e)
         self.finished.emit()
+
+    def finish_with_failure(self):
+        self.common.log('Verifier', 'finish_with_failure')
+        self.finished.emit()
+
 
 class Refresher(QtCore.QThread):
     success = QtCore.pyqtSignal(Endpoint, list, list)
