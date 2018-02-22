@@ -23,6 +23,8 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from .endpoint_dialog import EndpointDialog
 
 class EndpointList(QtWidgets.QWidget):
+    resize_window = QtCore.pyqtSignal()
+
     def __init__(self, common):
         super(EndpointList, self).__init__()
         self.common = common
@@ -70,7 +72,7 @@ class EndpointList(QtWidgets.QWidget):
             widget = self.create_endpoint_widget(e)
             self.endpoint_layout.addWidget(widget)
 
-        self.adjustSize()
+        self.resize_window.emit()
 
     def create_endpoint_widget(self, e):
         """

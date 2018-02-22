@@ -55,11 +55,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Endpoint list
         self.endpoint_list = EndpointList(self.common)
+        self.endpoint_list.resize_window.connect(self.resize_window)
 
         # Status bar
         version_label = QtWidgets.QLabel(self.version_string)
         version_label.setStyleSheet('QLabel { color: #666666; }')
         self.status_bar = QtWidgets.QStatusBar()
+        self.status_bar.setSizeGripEnabled(False)
         self.status_bar.addPermanentWidget(version_label)
         self.setStatusBar(self.status_bar)
 
@@ -67,8 +69,18 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(header_widget)
         layout.addWidget(self.endpoint_list)
+        layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         central_widget = QtWidgets.QWidget()
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
+        self.resize_window()
         self.show()
+
+    def resize_window(self):
+        """
+        Update the fixed window size
+        """
+        self.common.log('MainWindow', 'resize_window')
+        self.adjustSize()
+        self.setFixedSize(self.sizeHint())
