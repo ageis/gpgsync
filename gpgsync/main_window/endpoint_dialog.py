@@ -265,16 +265,14 @@ class VerifierDialog(QtWidgets.QDialog):
 
     def alert_error(self, msg, details=''):
         self.common.log('VerifierDialog', 'alert_error, msg={}, details={}'.format(msg, details))
-        self.wait_and_terminate_thread()
-        self.common.alert(msg, details)
-
-        self.error.emit()
         self.reject()
+        self.terminate_thread()
+        self.common.alert(msg, details)
+        self.error.emit()
 
     def status_update(self, msg):
         self.common.log('VerifierDialog', msg)
         self.status_label.setText(msg)
-        #self.adjustSize()
 
     def save(self):
         self.common.log('VerifierDialog', 'save')
@@ -282,7 +280,7 @@ class VerifierDialog(QtWidgets.QDialog):
         # Make the endpoint
         e = Endpoint(self.common)
         e.fingerprint = self.fingerprint
-        e.url = self.url + b'.sig'
+        e.url = self.url
         e.keyserver = self.keyserver
         e.use_proxy = self.use_proxy
         e.proxy_host = self.proxy_host
@@ -292,20 +290,17 @@ class VerifierDialog(QtWidgets.QDialog):
         self.common.settings.endpoints.append(e)
         self.common.settings.save()
 
-        self.wait_and_terminate_thread()
+        self.terminate_thread()
         self.success.emit()
         self.accept()
 
-    def wait_and_terminate_thread(self):
-        self.common.log('VerifierDialog', 'wait_and_terminate_thread')
-        self.v.wait(500)
-        if self.v.isRunning():
-            self.v.terminate()
-        self.close()
-
     def cancel_clicked(self):
         self.common.log('VerifierDialog', 'cancel_clicked')
+        self.terminate_thread()
+        self.reject()
+
+    def terminate_thread(self):
+        self.common.log('VerifierDialog', 'wait_and_terminate_thread')
+        self.v.wait(200)
         if self.v.isRunning():
             self.v.terminate()
-        self.close()
-        self.reject()
