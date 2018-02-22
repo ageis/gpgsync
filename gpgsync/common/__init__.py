@@ -36,7 +36,10 @@ class Common(object):
     An object that contains functions and state shared by both the main window and
     sync mode.
     """
-    def __init__(self, debug):
+    def __init__(self, app, debug):
+        # Qt app
+        self.app = app
+
         # Debug mode
         self.debug = debug
 

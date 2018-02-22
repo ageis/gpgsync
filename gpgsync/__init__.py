@@ -42,7 +42,7 @@ def main():
         debug = True
 
     app = Application()
-    common = Common(debug)
+    common = Common(app, debug)
     main_window = MainWindow(app, common)
 
     sys.exit(app.exec_())
