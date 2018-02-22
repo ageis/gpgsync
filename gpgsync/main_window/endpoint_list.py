@@ -29,7 +29,7 @@ class EndpointList(QtWidgets.QWidget):
         self.common.log('EndpointList', '__init__')
 
         # Endpoint layout
-        endpoint_layout = QtWidgets.QHBoxLayout()
+        self.endpoint_layout = QtWidgets.QVBoxLayout()
 
         # Buttons
         self.add_button = QtWidgets.QPushButton('Add Endpoint')
@@ -41,7 +41,7 @@ class EndpointList(QtWidgets.QWidget):
 
         # Layout
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(endpoint_layout)
+        layout.addLayout(self.endpoint_layout)
         layout.addStretch()
         layout.addLayout(button_layout)
         self.setLayout(layout)
@@ -54,8 +54,19 @@ class EndpointList(QtWidgets.QWidget):
         """
         self.common.log('EndpointList', 'refresh')
 
+        # Remove all widgets in the endpoint layout
+        while self.endpoint_layout.count() > 0:
+            item = self.endpoint_layout.takeAt(0)
+            self.endpoint_layout.removeItem(item)
+
+        # Add new widgets from the endpoints in settings
         for e in self.common.settings.endpoints:
-            self.common.log('EndpointList', str(e))
+            label = QtWidgets.QLabel(e.fingerprint.decode())
+            layout = QtWidgets.QVBoxLayout()
+            layout.addWidget(label)
+            self.endpoint_layout.addLayout(layout)
+
+        self.adjustSize()
 
     def add_endpoint(self):
         """
@@ -63,4 +74,5 @@ class EndpointList(QtWidgets.QWidget):
         """
         self.common.log('EndpointList', 'add_endpoint')
         d = EndpointDialog(self.common)
+        d.finished.connect(self.refresh)
         d.exec_()

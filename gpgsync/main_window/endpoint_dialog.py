@@ -196,14 +196,14 @@ class EndpointDialog(QtWidgets.QDialog):
         Cancel button clicked.
         """
         self.common.log('EndpointDialog', 'cancel_clicked')
-        self.close()
+        self.reject()
 
     def success(self):
         """
         Verifier succeeded, and endpoint has been saved.
         """
         self.common.log('EndpointDialog', 'success')
-        self.close()
+        self.accept()
 
 
 class VerifierDialog(QtWidgets.QDialog):
