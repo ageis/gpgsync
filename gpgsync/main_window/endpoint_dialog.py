@@ -225,12 +225,15 @@ class VerifierDialog(QtWidgets.QDialog):
         # Dialog settings
         self.setModal(True)
         self.setWindowTitle('Verify Endpoint')
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(100)
 
         # Loading animation
         loading_animation = LoadingAnimation(self.common)
 
         # Status label
         self.status_label = QtWidgets.QLabel('...')
+        self.status_label.setWordWrap(True)
 
         # Status layout
         status_layout = QtWidgets.QHBoxLayout()
@@ -239,6 +242,7 @@ class VerifierDialog(QtWidgets.QDialog):
 
         # Cancel button
         cancel_button = QtWidgets.QPushButton('Cancel')
+        cancel_button.clicked.connect(self.cancel_clicked)
         buttons_layout = QtWidgets.QHBoxLayout()
         buttons_layout.addStretch()
         buttons_layout.addWidget(cancel_button)
@@ -261,15 +265,16 @@ class VerifierDialog(QtWidgets.QDialog):
 
     def alert_error(self, msg, details=''):
         self.common.log('VerifierDialog', 'alert_error, msg={}, details={}'.format(msg, details))
-        self.close_when_thread_finishes()
+        self.wait_and_terminate_thread()
         self.common.alert(msg, details)
 
         self.error.emit()
+        self.reject()
 
     def status_update(self, msg):
         self.common.log('VerifierDialog', msg)
         self.status_label.setText(msg)
-        self.adjustSize()
+        #self.adjustSize()
 
     def save(self):
         self.common.log('VerifierDialog', 'save')
@@ -287,11 +292,19 @@ class VerifierDialog(QtWidgets.QDialog):
         self.common.settings.endpoints.append(e)
         self.common.settings.save()
 
-        self.close_when_thread_finishes()
-        self.success.emit()
+        self.wait_and_terminate_thread()
+        self.accept()
 
-    def close_when_thread_finishes(self):
+    def wait_and_terminate_thread(self):
+        self.common.log('VerifierDialog', 'wait_and_terminate_thread')
         self.v.wait(500)
         if self.v.isRunning():
             self.v.terminate()
         self.close()
+
+    def cancel_clicked(self):
+        self.common.log('VerifierDialog', 'cancel_clicked')
+        if self.v.isRunning():
+            self.v.terminate()
+        self.close()
+        self.reject()
