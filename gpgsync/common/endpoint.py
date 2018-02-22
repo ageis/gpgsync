@@ -206,7 +206,7 @@ class Verifier(QtCore.QThread):
         # Make sure this isn't a duplicate endpoint
         success = True
         for existing_e in self.common.settings.endpoints:
-            if self.e.url == existing_e.url:
+            if self.e != existing_e and self.e.url == existing_e.url:
                 self.alert_error.emit('An endpoint with this URL is already added', '')
                 success = False
                 break
@@ -219,9 +219,9 @@ class Verifier(QtCore.QThread):
             self.status_update.emit('Loading URL {}'.format(self.e.url.decode()))
             msg_bytes = self.e.fetch_msg_url()
         except ProxyURLDownloadError as e:
-            self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings', self.url.decode())
+            self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings', self.e.url.decode())
         except URLDownloadError as e:
-            self.alert_error.emit('URL failed to download: Check your internet connection.', self.url.decode())
+            self.alert_error.emit('URL failed to download: Check your internet connection.', self.e.url.decode())
         else:
             success = True
         if not success:
@@ -251,7 +251,7 @@ class Verifier(QtCore.QThread):
         except InvalidKeyserver:
             self.alert_error.emit('Invalid keyserver', '')
         except KeyserverError:
-            self.alert_error.emit('Error with keyserver {}'.format(self.keyserver.decode()), '')
+            self.alert_error.emit('Error with keyserver {}'.format(self.e.keyserver.decode()), '')
         except NotFoundOnKeyserver:
             self.alert_error.emit('Signing key is not found on keyserver. Upload signing key and try again', '')
         except NotFoundInKeyring:
