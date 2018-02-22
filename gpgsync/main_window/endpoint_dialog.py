@@ -300,7 +300,7 @@ class VerifierDialog(QtWidgets.QDialog):
         self.reject()
 
     def terminate_thread(self):
-        self.common.log('VerifierDialog', 'wait_and_terminate_thread')
+        self.common.log('VerifierDialog', 'terminate_thread')
         self.v.wait(200)
         if self.v.isRunning():
             self.v.terminate()
