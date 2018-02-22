@@ -148,6 +148,8 @@ class EndpointDialog(QtWidgets.QDialog):
         self.update_sig_url(self.url_edit.text())
         self.setLayout(layout)
 
+        self.resize_dialog()
+
     def advanced_toggle(self):
         """
         Show or hide advanced options
@@ -160,7 +162,7 @@ class EndpointDialog(QtWidgets.QDialog):
             self.advanced_options.show()
             self.advanced_toggle_button.setText('Hide advanced options')
 
-        self.adjustSize()
+        self.resize_dialog()
 
     def update_sig_url(self, text):
         """
@@ -169,9 +171,9 @@ class EndpointDialog(QtWidgets.QDialog):
         if text != '':
             self.sig_url_label.show()
             self.sig_url_label.setText("Signature URL: {}.sig".format(text))
-            self.adjustSize()
         else:
             self.sig_url_label.hide()
+        self.resize_dialog()
 
     def save_clicked(self):
         """
@@ -204,6 +206,14 @@ class EndpointDialog(QtWidgets.QDialog):
         """
         self.common.log('EndpointDialog', 'success')
         self.accept()
+
+    def resize_dialog(self):
+        """
+        Update the fixed dialog size
+        """
+        self.common.log('EndpointDialog', 'resize_dialog')
+        self.adjustSize()
+        self.setFixedSize(self.sizeHint())
 
 
 class VerifierDialog(QtWidgets.QDialog):
@@ -253,7 +263,7 @@ class VerifierDialog(QtWidgets.QDialog):
         layout.addLayout(status_layout)
         layout.addLayout(buttons_layout)
         self.setLayout(layout)
-        self.adjustSize()
+        self.resize_dialog()
 
         # Run the verifier inside a new thread
         self.v = Verifier(self.common, self.fingerprint, self.url, self.keyserver,
@@ -273,6 +283,7 @@ class VerifierDialog(QtWidgets.QDialog):
     def status_update(self, msg):
         self.common.log('VerifierDialog', msg)
         self.status_label.setText(msg)
+        self.resize_dialog()
 
     def save(self):
         self.common.log('VerifierDialog', 'save')
@@ -304,3 +315,11 @@ class VerifierDialog(QtWidgets.QDialog):
         self.v.wait(200)
         if self.v.isRunning():
             self.v.terminate()
+
+    def resize_dialog(self):
+        """
+        Update the fixed dialog size
+        """
+        self.common.log('VerifierDialog', 'resize_dialog')
+        self.adjustSize()
+        self.setFixedSize(self.sizeHint())
