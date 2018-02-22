@@ -33,7 +33,7 @@ class EndpointList(QtWidgets.QWidget):
 
         # Buttons
         self.add_button = QtWidgets.QPushButton()
-        self.add_button.clicked.connect(self.add_endpoint)
+        self.add_button.clicked.connect(self.add_clicked)
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addWidget(self.add_button)
         button_layout.addStretch()
@@ -68,52 +68,61 @@ class EndpointList(QtWidgets.QWidget):
 
         # Add new widgets from the endpoints in settings
         for e in self.common.settings.endpoints:
-            # Group box for the endpoint
-            group_box = QtWidgets.QGroupBox()
-            uid = self.common.gpg.get_uid(e.fingerprint)
-            if uid != '':
-                group_box.setTitle(uid)
-            else:
-                keyid = self.common.fp_to_keyid(e.fingerprint).decode()
-                group_box.setTitle(keyid)
-
-            # Last synced label
-            last_synced_label = QtWidgets.QLabel()
-            if e.last_checked:
-                if e.error:
-                    last_synced = str(e.last_failed)
-                else:
-                    last_synced = str(e.last_synced)
-            else:
-                last_synced = 'never'
-
-            if e.error:
-                last_synced_label.setText('Last attempted: {}'.format(last_synced))
-            else:
-                last_synced_label.setText('Last synced: {}'.format(last_synced))
-
-            # Buttons
-            button_style = 'QPushButton { font-size: 11px; }'
-            edit_button = QtWidgets.QPushButton('Edit')
-            edit_button.setStyleSheet(button_style)
-            delete_button = QtWidgets.QPushButton('Delete')
-            delete_button.setStyleSheet(button_style)
-            buttons_layout = QtWidgets.QHBoxLayout()
-            buttons_layout.addWidget(edit_button)
-            buttons_layout.addWidget(delete_button)
-            buttons_layout.addStretch()
-
-            # Layout
-            layout = QtWidgets.QVBoxLayout()
-            layout.addWidget(last_synced_label)
-            layout.addLayout(buttons_layout)
-            group_box.setLayout(layout)
-
-            self.endpoint_layout.addWidget(group_box)
+            widget = self.create_endpoint_widget(e)
+            self.endpoint_layout.addWidget(widget)
 
         self.adjustSize()
 
-    def add_endpoint(self):
+    def create_endpoint_widget(self, e):
+        """
+        Generate an endpoint widget to add to the list
+        """
+        # Group box for the endpoint
+        widget = QtWidgets.QGroupBox()
+        uid = self.common.gpg.get_uid(e.fingerprint)
+        if uid != '':
+            widget.setTitle(uid)
+        else:
+            keyid = self.common.fp_to_keyid(e.fingerprint).decode()
+            widget.setTitle(keyid)
+
+        # Last synced label
+        last_synced_label = QtWidgets.QLabel()
+        if e.last_checked:
+            if e.error:
+                last_synced = str(e.last_failed)
+            else:
+                last_synced = str(e.last_synced)
+        else:
+            last_synced = 'never'
+
+        if e.error:
+            last_synced_label.setText('Last attempted: {}'.format(last_synced))
+        else:
+            last_synced_label.setText('Last synced: {}'.format(last_synced))
+
+        # Buttons
+        button_style = 'QPushButton { font-size: 11px; }'
+        edit_button = QtWidgets.QPushButton('Edit')
+        edit_button.clicked.connect(lambda: self.edit_clicked(e))
+        edit_button.setStyleSheet(button_style)
+        delete_button = QtWidgets.QPushButton('Delete')
+        delete_button.clicked.connect(lambda: self.delete_clicked(e))
+        delete_button.setStyleSheet(button_style)
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addWidget(edit_button)
+        buttons_layout.addWidget(delete_button)
+        buttons_layout.addStretch()
+
+        # Layout
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(last_synced_label)
+        layout.addLayout(buttons_layout)
+        widget.setLayout(layout)
+
+        return widget
+
+    def add_clicked(self):
         """
         Open a new dialog to add an endpoint
         """
@@ -121,3 +130,15 @@ class EndpointList(QtWidgets.QWidget):
         d = EndpointDialog(self.common)
         d.finished.connect(self.refresh)
         d.exec_()
+
+    def edit_clicked(self, e):
+        """
+        Open a new dialog to edit the endpoint
+        """
+        self.common.log('EndpointList', 'edit_clicked {}'.format(e.url))
+
+    def delete_clicked(self, e):
+        """
+        Delete the endpoint
+        """
+        self.common.log('EndpointList', 'delete_clicked {}'.format(e.url))
