@@ -62,5 +62,5 @@ class EndpointList(QtWidgets.QWidget):
         Open a new dialog to add an endpoint
         """
         self.common.log('EndpointList', 'add_endpoint')
-        d = EndpointDialog(self.common, True)
+        d = EndpointDialog(self.common)
         d.exec_()

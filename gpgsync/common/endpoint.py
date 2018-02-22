@@ -170,7 +170,7 @@ class Endpoint(QtCore.QObject):
 class Verifier(QtCore.QThread):
     alert_error = QtCore.pyqtSignal(str, str)
     status_update = QtCore.pyqtSignal(str)
-    success = QtCore.pyqtSignal(Endpoint)
+    success = QtCore.pyqtSignal()
 
     def __init__(self, common, fingerprint, url, keyserver, use_proxy, proxy_host, proxy_port):
         super(Verifier, self).__init__()
@@ -300,7 +300,7 @@ class Verifier(QtCore.QThread):
             return self.finish_with_failure()
 
         self.status_update.emit('Endpoint saved')
-        self.success.emit(e)
+        self.success.emit()
         self.finished.emit()
 
     def finish_with_failure(self):
