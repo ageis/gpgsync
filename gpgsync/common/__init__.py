@@ -102,6 +102,7 @@ class Common(object):
 
         d.setIcon(icon)
         d.exec_()
+        return d
 
     def update_alert(self, curr_version, latest_version, url):
         d = QtWidgets.QMessageBox()

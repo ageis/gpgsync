@@ -62,9 +62,8 @@ class EndpointList(QtWidgets.QWidget):
             self.add_button.setStyleSheet('QPushButton { font-size: 11px; }')
 
         # Remove all widgets in the endpoint layout
-        while self.endpoint_layout.count() > 0:
-            item = self.endpoint_layout.takeAt(0)
-            self.endpoint_layout.removeItem(item)
+        for i in reversed(range(self.endpoint_layout.count())):
+            self.endpoint_layout.itemAt(i).widget().setParent(None)
 
         # Add new widgets from the endpoints in settings
         for e in self.common.settings.endpoints:
@@ -142,4 +141,8 @@ class EndpointList(QtWidgets.QWidget):
         Delete the endpoint
         """
         self.common.log('EndpointList', 'delete_clicked {}'.format(e.url))
-        self.common.alert('Are you sure you want to delete this endpoint?', question=True)
+        d = self.common.alert('Are you sure you want to delete this endpoint?', question=True)
+        if d.result() == QtWidgets.QMessageBox.Accepted:
+            self.common.settings.endpoints.remove(e)
+            self.common.settings.save()
+            self.refresh()
