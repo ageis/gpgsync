@@ -59,7 +59,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Status bar
         version_label = QtWidgets.QLabel(self.version_string)
-        version_label.setStyleSheet('QLabel { color: #666666; }')
+        version_label.setStyleSheet('QLabel { color: #666666; font-size: 11px; margin-right: 5px; }')
         self.status_bar = QtWidgets.QStatusBar()
         self.status_bar.setSizeGripEnabled(False)
         self.status_bar.addPermanentWidget(version_label)

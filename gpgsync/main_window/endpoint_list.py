@@ -80,6 +80,7 @@ class EndpointList(QtWidgets.QWidget):
         """
         # Group box for the endpoint
         widget = QtWidgets.QGroupBox()
+        widget.setStyleSheet('QGroupBox { font-weight: bold; }')
         uid = self.common.gpg.get_uid(e.fingerprint)
         if uid != '':
             widget.setTitle(uid)
