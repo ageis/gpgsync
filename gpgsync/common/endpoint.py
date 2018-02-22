@@ -49,7 +49,6 @@ class Endpoint(QtCore.QObject):
         super(Endpoint, self).__init__()
         self.common = common
 
-        self.verified = False
         self.fingerprint = b''
         self.url = b''
         self.sig_url = b'https://.sig'
@@ -67,7 +66,6 @@ class Endpoint(QtCore.QObject):
         Acts as a secondary constructor to load an endpoint from settings
     """
     def load(self, e):
-        self.verified = e['verified']
         self.fingerprint = str.encode(e['fingerprint'])
         self.url = str.encode(e['url'])
         self.sig_url = str.encode(e['sig_url'])

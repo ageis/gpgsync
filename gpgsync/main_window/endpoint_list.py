@@ -61,7 +61,14 @@ class EndpointList(QtWidgets.QWidget):
 
         # Add new widgets from the endpoints in settings
         for e in self.common.settings.endpoints:
-            label = QtWidgets.QLabel(e.fingerprint.decode())
+            label = QtWidgets.QLabel()
+            uid = self.common.gpg.get_uid(e.fingerprint)
+            if uid != '':
+                label.setText(uid)
+            else:
+                keyid = self.common.fp_to_keyid(e.fingerprint).decode()
+                label.setText(keyid)
+
             layout = QtWidgets.QVBoxLayout()
             layout.addWidget(label)
             self.endpoint_layout.addLayout(layout)

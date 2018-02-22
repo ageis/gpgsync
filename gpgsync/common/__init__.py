@@ -40,6 +40,8 @@ class Common(object):
         # Debug mode
         self.debug = debug
 
+        self.log('Common', '__init__')
+
         # The platform
         self.system = platform.system()
 
@@ -67,6 +69,14 @@ class Common(object):
             if self.system == 'Windows':
                 self.alert('GnuPG doesn\'t seem to be installed. Install <a href="http://gpg4win.org/">Gpg4win</a>.')
             sys.exit()
+
+        # Import endpoint authority keys
+        self.log('Common', 'importing endpoint authority keys')
+        for e in self.settings.endpoints:
+            try:
+                self.gpg.import_pubkey_from_disk(e.fingerprint)
+            except:
+                pass
 
     def log(self, module, msg):
         if self.debug:

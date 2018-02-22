@@ -200,7 +200,6 @@ class Settings(object):
                     self.endpoints = []
                     for old_e in settings['endpoints']:
                         e = Endpoint()
-                        e.verified = old_e.verified
                         e.fingerprint = old_e.fingerprint
                         e.url = old_e.url
                         e.sig_url = old_e.sig_url
@@ -266,7 +265,6 @@ See more: https://github.com/firstlookmedia/gpgsync/issues/104
 """
 class OldEndpoint(object):
     def __init__(self):
-        self.verified = False
         self.fingerprint = b''
         self.url = b'https://'
         self.sig_url = b'https://.sig'
