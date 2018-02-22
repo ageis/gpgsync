@@ -51,7 +51,6 @@ class Endpoint(QtCore.QObject):
 
         self.fingerprint = b''
         self.url = b''
-        self.sig_url = b'https://.sig'
         self.keyserver = b'hkps://hkps.pool.sks-keyservers.net'
         self.use_proxy = False
         self.proxy_host = b'127.0.0.1'
@@ -63,12 +62,11 @@ class Endpoint(QtCore.QObject):
         self.warning = None
 
     """
-        Acts as a secondary constructor to load an endpoint from settings
+    Acts as a secondary constructor to load an endpoint from settings
     """
     def load(self, e):
         self.fingerprint = str.encode(e['fingerprint'])
         self.url = str.encode(e['url'])
-        self.sig_url = str.encode(e['sig_url'])
         self.keyserver = str.encode(e['keyserver'])
         self.use_proxy = e['use_proxy']
         self.proxy_host = str.encode(e['proxy_host'])
@@ -80,6 +78,12 @@ class Endpoint(QtCore.QObject):
         self.warning = e['warning']
 
         return self
+
+    def sig_url(self):
+        """
+        Returns the URL of the detached PGP signature
+        """
+        return self.url + b'.sig'
 
     def serialize(self):
         tmp = {}
@@ -110,7 +114,7 @@ class Endpoint(QtCore.QObject):
         return self.fetch_url(self.url)
 
     def fetch_msg_sig_url(self):
-        return self.fetch_url(self.sig_url)
+        return self.fetch_url(self.sig_url())
 
     def fetch_url(self, url):
         try:
@@ -177,7 +181,6 @@ class Verifier(QtCore.QThread):
 
         self.fingerprint = fingerprint
         self.url = url
-        self.sig_url = self.url + b'.sig'
         self.keyserver = keyserver
         self.use_proxy = use_proxy
         self.proxy_host = proxy_host
@@ -190,7 +193,6 @@ class Verifier(QtCore.QThread):
         e = Endpoint(self.common)
         e.fingerprint = self.fingerprint
         e.url = self.url
-        e.sig_url = self.sig_url
         e.keyserver = self.keyserver
         e.use_proxy = self.use_proxy
         e.proxy_host = self.proxy_host
@@ -215,6 +217,16 @@ class Verifier(QtCore.QThread):
         if not success:
             return self.finish_with_failure()
 
+        # Make sure this isn't a duplicate endpoint
+        success = True
+        for existing_e in self.common.settings.endpoints:
+            if e.url == existing_e.url:
+                self.alert_error.emit('An endpoint with this URL is already added', '')
+                success = False
+                break
+        if not success:
+            return self.finish_with_failure()
+
         # Test loading URL
         success = False
         try:
@@ -232,7 +244,7 @@ class Verifier(QtCore.QThread):
         # Test loading signature URL
         success = False
         try:
-            self.status_update.emit('Loading URL {}'.format(self.sig_url.decode()))
+            self.status_update.emit('Loading URL {}'.format(e.sig_url().decode()))
             msg_sig_bytes = e.fetch_msg_sig_url()
         except ProxyURLDownloadError as e:
             self.alert_error.emit('URL failed to download: Check your internet connection and proxy settings.', self.sig_url.decode())
@@ -403,7 +415,7 @@ class Refresher(QtCore.QThread):
         # Download signature URL
         success = False
         try:
-            self.log('Downloading URL {}'.format(self.e.sig_url.decode()))
+            self.log('Downloading URL {}'.format(self.e.sig_url().decode()))
             msg_sig_bytes = self.e.fetch_msg_sig_url()
         except URLDownloadError as e:
             err = 'Failed to download: Check your internet connection'
