@@ -60,7 +60,7 @@ class Settings(object):
 
                 # Copy json settings into self
                 if 'endpoints' in self.settings:
-                    self.endpoints = [Endpoint().load(e) for e in self.settings['endpoints']]
+                    self.endpoints = [Endpoint(self.common).load(e) for e in self.settings['endpoints']]
                 else:
                     self.endpoints = []
                 if 'run_automatically' in self.settings:
