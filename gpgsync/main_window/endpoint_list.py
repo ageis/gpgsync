@@ -35,7 +35,6 @@ class EndpointList(QtWidgets.QWidget):
         self.add_button = QtWidgets.QPushButton('Add Endpoint')
         self.add_button.clicked.connect(self.add_endpoint)
         button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addStretch()
         button_layout.addWidget(self.add_button)
         button_layout.addStretch()
 
@@ -61,17 +60,48 @@ class EndpointList(QtWidgets.QWidget):
 
         # Add new widgets from the endpoints in settings
         for e in self.common.settings.endpoints:
-            label = QtWidgets.QLabel()
+            # Group box for the endpoint
+            group_box = QtWidgets.QGroupBox()
             uid = self.common.gpg.get_uid(e.fingerprint)
             if uid != '':
-                label.setText(uid)
+                group_box.setTitle(uid)
             else:
                 keyid = self.common.fp_to_keyid(e.fingerprint).decode()
-                label.setText(keyid)
+                group_box.setTitle(keyid)
 
+            # Last synced label
+            last_synced_label = QtWidgets.QLabel()
+            if e.last_checked:
+                if e.error:
+                    last_synced = str(e.last_failed)
+                else:
+                    last_synced = str(e.last_synced)
+            else:
+                last_synced = 'never'
+
+            if e.error:
+                last_synced_label.setText('Last attempted: {}'.format(last_synced))
+            else:
+                last_synced_label.setText('Last synced: {}'.format(last_synced))
+
+            # Buttons
+            button_style = 'QPushButton { font-size: 10px; }'
+            edit_button = QtWidgets.QPushButton('Edit')
+            edit_button.setStyleSheet(button_style)
+            delete_button = QtWidgets.QPushButton('Delete')
+            delete_button.setStyleSheet(button_style)
+            buttons_layout = QtWidgets.QHBoxLayout()
+            buttons_layout.addWidget(edit_button)
+            buttons_layout.addWidget(delete_button)
+            buttons_layout.addStretch()
+
+            # Layout
             layout = QtWidgets.QVBoxLayout()
-            layout.addWidget(label)
-            self.endpoint_layout.addLayout(layout)
+            layout.addWidget(last_synced_label)
+            layout.addLayout(buttons_layout)
+            group_box.setLayout(layout)
+
+            self.endpoint_layout.addWidget(group_box)
 
         self.adjustSize()
 
