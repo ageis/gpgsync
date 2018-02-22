@@ -32,7 +32,7 @@ class EndpointList(QtWidgets.QWidget):
         self.endpoint_layout = QtWidgets.QVBoxLayout()
 
         # Buttons
-        self.add_button = QtWidgets.QPushButton('Add Endpoint')
+        self.add_button = QtWidgets.QPushButton()
         self.add_button.clicked.connect(self.add_endpoint)
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addWidget(self.add_button)
@@ -52,6 +52,14 @@ class EndpointList(QtWidgets.QWidget):
         Redraw all endpoints based on what's in settings
         """
         self.common.log('EndpointList', 'refresh')
+
+        # If there are no endpoints yet
+        if len(self.common.settings.endpoints) == 0:
+            self.add_button.setText('Add First GPG Sync Endpoint')
+            self.add_button.setStyleSheet('QPushButton { background-color: #5fa416; color: #ffffff; padding: 10px; border: 0; border-radius: 5px; }')
+        else:
+            self.add_button.setText('Add')
+            self.add_button.setStyleSheet('QPushButton { font-size: 11px; }')
 
         # Remove all widgets in the endpoint layout
         while self.endpoint_layout.count() > 0:
@@ -85,7 +93,7 @@ class EndpointList(QtWidgets.QWidget):
                 last_synced_label.setText('Last synced: {}'.format(last_synced))
 
             # Buttons
-            button_style = 'QPushButton { font-size: 10px; }'
+            button_style = 'QPushButton { font-size: 11px; }'
             edit_button = QtWidgets.QPushButton('Edit')
             edit_button.setStyleSheet(button_style)
             delete_button = QtWidgets.QPushButton('Delete')

@@ -293,6 +293,7 @@ class VerifierDialog(QtWidgets.QDialog):
         self.common.settings.save()
 
         self.wait_and_terminate_thread()
+        self.success.emit()
         self.accept()
 
     def wait_and_terminate_thread(self):

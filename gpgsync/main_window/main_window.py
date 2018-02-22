@@ -41,7 +41,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Header
         header_widget = QtWidgets.QWidget()
-        header_widget.setStyleSheet('QWidget { background-color: #ffffff; border-radius: 5px; }')
+        header_widget.setStyleSheet('QWidget { border-bottom: 1px solid black; }')
         header_logo = QtGui.QImage(self.common.get_resource_path('gpgsync-32x32.png'))
         header_logo_label = QtWidgets.QLabel()
         header_logo_label.setPixmap(QtGui.QPixmap.fromImage(header_logo))
