@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 import platform
+import argparse
 from PyQt5 import QtCore, QtWidgets
 
 from .common import Common
@@ -37,13 +38,22 @@ def main():
     if getattr(sys, 'frozen', False):
         os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
 
-    debug = False
-    if '--debug' in sys.argv:
-        debug = True
+    # Parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sync', action='store_true', dest='sync', help='Open in sync mode')
+    parser.add_argument('--debug', action='store_true', dest='debug', help='Display debug log output')
+    args = parser.parse_args()
+
+    sync = bool(args.sync)
+    debug = bool(args.debug)
 
     app = Application()
     common = Common(app, debug)
-    main_window = MainWindow(app, common)
+
+    if sync:
+        pass
+    else:
+        main_window = MainWindow(app, common)
 
     sys.exit(app.exec_())
 
