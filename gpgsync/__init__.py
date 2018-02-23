@@ -25,6 +25,7 @@ import argparse
 from PyQt5 import QtCore, QtWidgets
 
 from .common import Common
+from .sync import Sync
 from .main_window import MainWindow
 
 class Application(QtWidgets.QApplication):
@@ -51,7 +52,7 @@ def main():
     common = Common(app, debug)
 
     if sync:
-        pass
+        sync = Sync(app, common)
     else:
         main_window = MainWindow(app, common)
 

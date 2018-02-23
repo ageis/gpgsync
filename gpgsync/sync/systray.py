@@ -21,17 +21,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import queue, platform
 from PyQt5 import QtCore, QtWidgets
 
-from . import common
-
 class SysTray(QtWidgets.QSystemTrayIcon):
     quit_signal = QtCore.pyqtSignal()
 
     def __init__(self, common):
-        super(SysTray, self).__init__(common.get_systray_icon())
+        super(SysTray, self).__init__()
         self.common = common
         self.common.log('SysTray', '__init__')
 
-        self.setIcon(self.common.get_systray_icon())
+        self.setIcon(self.common.systray_icon)
 
         # Menu
         self.menu = QtWidgets.QMenu()
@@ -39,7 +37,7 @@ class SysTray(QtWidgets.QSystemTrayIcon):
         self.quit_act.triggered.connect(self.clicked_quit)
 
         self.setContextMenu(self.menu)
-        self.activated.connect(self.clicked_activated)
+        #self.activated.connect(self.clicked_activated)
 
         # Show the systray icon
         self.show()

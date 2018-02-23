@@ -31,4 +31,4 @@ class Sync(QtWidgets.QMainWindow):
         self.app = app
 
         self.systray = SysTray(self.common)
-        self.systray.quit_signal.connect(self.quit)
+        self.systray.quit_signal.connect(self.app.quit)
